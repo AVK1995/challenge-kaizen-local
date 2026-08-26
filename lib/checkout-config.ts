@@ -13,9 +13,14 @@ export const CHECKOUT_CONFIG = {
   /* The launch domain as the fallback, not example.com: this value is sent to
      Meta as event_source_url and written into every Razorpay order, so an
      unset env var would quietly attribute live events to a domain we do not
-     own. The env var still wins wherever it is set. */
+     own.
+
+     `||`, not `??`. A host that defines the key with a blank value yields an
+     empty string, which `??` passes straight through, and an empty
+     event_source_url is silently worthless to Meta. */
   fallbackEventSourceUrl:
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://challenge.kaizengoa.com',
+    (process.env.NEXT_PUBLIC_SITE_URL || '').trim() ||
+    'https://challenge.kaizengoa.com',
   meta: {
     pixelId: process.env.META_PIXEL_ID ?? '',
     accessToken: process.env.META_CAPI_ACCESS_TOKEN ?? '',

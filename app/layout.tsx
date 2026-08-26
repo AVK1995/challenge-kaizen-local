@@ -46,10 +46,33 @@ const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating per
 
 /* The live origin. Without a metadataBase Next resolves every share URL and
    every relative OG asset against localhost, so a link pasted into WhatsApp
-   previews as a dead local address. The literal is the launch domain and only
-   acts as a fallback: the env var wins wherever it is set. */
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://challenge.kaizengoa.com';
+   previews as a dead local address.
+
+   This is deliberately defensive, because metadataBase is evaluated at BUILD
+   time on every route including the generated /_not-found. A bad value here
+   does not degrade the page, it fails the deploy:
+
+     `??` does NOT catch an empty string. A host that defines the variable with
+     a blank value (Vercel does exactly this when the key is added without one)
+     gives new URL('') and ERR_INVALID_URL, which is what broke the build.
+
+   So: fall back on any falsy value rather than only on null, add the protocol
+   if someone pastes a bare domain, and if it still will not parse, use the
+   literal rather than throwing. */
+const FALLBACK_ORIGIN = 'https://challenge.kaizengoa.com';
+
+function resolveSiteUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL || '').trim();
+  if (!raw) return FALLBACK_ORIGIN;
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    return new URL(withProtocol).origin;
+  } catch {
+    return FALLBACK_ORIGIN;
+  }
+}
+
+const SITE_URL = resolveSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
