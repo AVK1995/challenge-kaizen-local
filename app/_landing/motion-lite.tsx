@@ -100,7 +100,12 @@ type MotionProps = {
   className?: string;
   style?: StyleLike;
   children?: React.ReactNode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /* Deliberately `any`, and deliberately WITHOUT an eslint-disable comment.
+     This is the pass-through for every prop the real framer-motion API accepts
+     that is not modelled above, and it is spread straight onto the element.
+     The project extends next/core-web-vitals only, so @typescript-eslint is not
+     loaded: naming one of its rules in a disable directive makes ESLint fail on
+     the unknown rule, which is the error this comment used to cause. */
   [key: string]: any;
 };
 
