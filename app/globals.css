@@ -1,0 +1,842 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  KAIZEN · tokens
+ *  Mirrors app/_landing/shared.ts (the TS half). Anything a pseudo-element
+ *  needs has to live here, because inline styles cannot reach ::before.
+ * ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --canvas: #fffdf8;
+  --canvas-2: #f6f4f1;
+  --ink: #1f325c;
+  --ink-soft: #5a6786;
+  --navy-deep: #16264a;
+  --on-dark: #fdf9f1;
+
+  --gold: #f2ddb6;
+  --gold-pale: #f2f1ee;
+  --gold-wash: #f9f0de;
+  --gold-mid: #d9b571;
+  --gold-deep: #a87c33;
+  --gold-ink: #8a6424;
+  --cta-gold: #ebc98d;
+
+  --coral: #ee7778;
+  --coral-bed: #fdecea;
+  --coral-ink: #b84447;
+
+  --line: #e7e4df;
+  --line-strong: #d6d2cb;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  /* The audience is women 40 to 55. The base sits a notch above the usual
+     15/16px and nothing on this page relies on a hairline weight. */
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+h1 {
+  letter-spacing: -0.022em;
+}
+
+p {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  SCROLL REVEAL (motion-lite)
+ *  framer-motion's whileInView, done with one IntersectionObserver and CSS, so
+ *  the page ships no animation runtime. Hidden states are gated behind `.bw-js`
+ *  which layout.tsx sets before first paint: no-JS users and crawlers always
+ *  see full content, and there is no reveal flash. (C7 fail-open.)
+ * ═══════════════════════════════════════════════════════════════════════ */
+.bw-js .bw-reveal-up,
+.bw-js .bw-reveal-up-sm,
+.bw-js .bw-reveal-left,
+.bw-js .bw-reveal-right,
+.bw-js .bw-reveal-scale,
+.bw-js .bw-reveal-fade {
+  opacity: 0;
+}
+.bw-js .bw-reveal-up { transform: translate3d(0, 24px, 0); }
+.bw-js .bw-reveal-up-sm { transform: translate3d(0, 14px, 0); }
+.bw-js .bw-reveal-left { transform: translate3d(32px, 0, 0); }
+.bw-js .bw-reveal-right { transform: translate3d(-32px, 0, 0); }
+.bw-js .bw-reveal-scale { transform: scale(0.96); }
+
+.bw-reveal {
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.bw-reveal.bw-in {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.bw-hover-scale { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+.bw-hover-scale:hover { transform: scale(1.02); }
+.bw-hover-lift { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.bw-hover-lift:hover { transform: translateY(-4px) !important; }
+.bw-hover-lift-sm { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.bw-hover-lift-sm:hover { transform: translateY(-3px) !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  THE LEGO SYSTEM (entrance choreography)
+ *
+ *  One motion idea everywhere: a piece is brought down from above, it
+ *  overshoots its slot by a hair, and it CLICKS into place. The overshoot is
+ *  the whole trick — a plain ease-out reads as "faded in"; the small bounce
+ *  past the resting point reads as "seated". (C6/C7.)
+ *
+ *  A section opts in with an attribute, never a component:
+ *    data-lego            drop and click, once
+ *    data-lego-loop       the same, re-armed on exit so it replays
+ *    data-lego="x"        slide in from the side instead of dropping
+ *    data-lego-stud       the small icon tile, pops just after its parent
+ *    style={legoDelay(i)} stagger within a group
+ * ═══════════════════════════════════════════════════════════════════════ */
+@keyframes lego-snap {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -32px, 0) scale(0.94) rotate(var(--lego-tilt, -1.4deg));
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, 5px, 0) scale(1.014) rotate(0deg);
+  }
+  68% { transform: translate3d(0, -3px, 0) scale(0.996) rotate(0deg); }
+  84% { transform: translate3d(0, 1.5px, 0) scale(1.003) rotate(0deg); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes lego-snap-x {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--lego-from, -26px), -14px, 0) scale(0.95);
+  }
+  55% {
+    opacity: 1;
+    transform: translate3d(calc(var(--lego-from, -26px) * -0.09), 3px, 0) scale(1.012);
+  }
+  76% { transform: translate3d(0, -2px, 0) scale(0.997); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes lego-stud {
+  0% { opacity: 0; transform: translate3d(0, -12px, 0) scale(0.6); }
+  60% { opacity: 1; transform: translate3d(0, 0, 0) scale(1.12); }
+  80% { transform: scale(0.97); }
+  100% { opacity: 1; transform: none; }
+}
+
+.bw-js [data-lego],
+.bw-js [data-lego-loop] {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.bw-js [data-lego].lego-in,
+.bw-js [data-lego-loop].lego-in {
+  animation: lego-snap 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--lego-d, 0ms);
+}
+.bw-js [data-lego='x'].lego-in,
+.bw-js [data-lego-loop='x'].lego-in {
+  animation-name: lego-snap-x;
+}
+.bw-js [data-lego-stud] { opacity: 0; }
+.bw-js [data-lego-stud].lego-in {
+  animation: lego-stud 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--lego-d, 0ms) + 130ms);
+}
+
+/* Once the entrance has finished, hand the transform back to :hover. Without
+   this the `both` fill-mode pins the element and the hover lift does nothing. */
+.bw-js [data-lego].lego-done,
+.bw-js [data-lego-loop].lego-done,
+.bw-js [data-lego-stud].lego-done {
+  animation: none;
+  opacity: 1;
+}
+
+/* ── hover: off the studs, then pressed back on ─────────────────────────── */
+.lego-hover {
+  transition:
+    transform 0.32s cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.32s ease;
+}
+.lego-hover:hover {
+  transform: translate3d(0, -6px, 0) scale(1.012);
+  box-shadow:
+    0 2px 0 0 rgba(217, 181, 113, 0.34),
+    0 20px 38px -20px rgba(31, 50, 92, 0.32);
+}
+.lego-hover:active {
+  transform: translate3d(0, -1px, 0) scale(0.994);
+  transition-duration: 0.09s;
+}
+
+.lego-hover-sm {
+  transition:
+    transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+}
+.lego-hover-sm:hover {
+  transform: translate3d(0, -3px, 0);
+  box-shadow: 0 12px 22px -16px rgba(31, 50, 92, 0.3);
+}
+.lego-hover-sm:active {
+  transform: translate3d(0, 0, 0) scale(0.996);
+  transition-duration: 0.09s;
+}
+
+/* Soft: a rise with no scale and no tilt, for the largest cards where the full
+   brick lift is too much travel for the area being moved. */
+.lego-hover-soft {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+.lego-hover-soft:hover {
+  transform: translate3d(0, -4px, 0);
+  box-shadow: 0 18px 34px -22px rgba(31, 50, 92, 0.32);
+}
+
+/* Icon-only: the generous hover target stays, but only the glyph moves. For
+   rows where the TEXT is the payload (the stat figures) and shifting it costs
+   more than the feedback is worth. */
+.lego-hover-icon { transition: none; }
+.lego-hover-icon:hover,
+.lego-hover-icon:active { transform: none; }
+
+/* The stud tile reacts to the whole piece being hovered, not to itself, so the
+   card reads as one object rather than two things animating separately. */
+.lego-stud { transition: transform 0.34s cubic-bezier(0.34, 1.6, 0.64, 1); }
+.lego-hover:hover .lego-stud,
+.lego-hover-sm:hover .lego-stud,
+.lego-hover-soft:hover .lego-stud,
+.lego-hover-icon:hover .lego-stud {
+  transform: translate3d(0, -2px, 0) rotate(-6deg) scale(1.1);
+}
+
+.lego-press {
+  transition: transform 0.26s cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 0.26s ease;
+}
+.lego-press:hover { transform: translate3d(0, -3px, 0); }
+.lego-press:active {
+  transform: translate3d(0, 1px, 0) scale(0.985);
+  transition-duration: 0.08s;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  ATTENTION — only ever on something the reader can act on (C7)
+ * ═══════════════════════════════════════════════════════════════════════ */
+@keyframes lego-pulse-dot {
+  0% { box-shadow: 0 0 0 0 var(--dot-pulse, rgba(238, 119, 120, 0.55)); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.lego-pulse-dot {
+  animation: lego-pulse-dot 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+/* The primary CTA's breath: a gold-tinted glow that swells and settles. Only
+   ONE instance per screen ever carries this. */
+@keyframes cta-breath {
+  0%, 100% {
+    box-shadow:
+      0 14px 30px -14px rgba(31, 50, 92, 0.5),
+      0 0 0 0 rgba(217, 181, 113, 0);
+  }
+  50% {
+    box-shadow:
+      0 14px 30px -14px rgba(31, 50, 92, 0.5),
+      0 0 0 8px rgba(217, 181, 113, 0.18);
+  }
+}
+.cta-breath { animation: cta-breath 3s ease-in-out infinite; }
+.cta-breath:hover { animation-play-state: paused; }
+
+/* The shimmer. A single narrow highlight crosses the button, then rests for
+   most of the cycle — a continuous sweep reads as a loading bar, not as light. */
+@keyframes cta-shimmer {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  22%, 100% { transform: translateX(320%) skewX(-18deg); }
+}
+.cta-shimmer { position: relative; overflow: hidden; isolation: isolate; }
+.cta-shimmer > * { position: relative; z-index: 2; }
+.cta-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  z-index: 1;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    var(--shimmer, rgba(255, 250, 238, 0.34)),
+    transparent
+  );
+  animation: cta-shimmer 5.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  THE HERO STAGE — atmosphere, never a flat navy fill (C5)
+ *  Two gold blooms and one coral bloom over a navy floor ramp, with a faint
+ *  dot grid masked to nothing at the edges so it never ends on a hard line.
+ * ═══════════════════════════════════════════════════════════════════════ */
+.kz-stage {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 62% 52% at 18% 6%, rgba(242, 221, 182, 0.17), transparent 62%),
+    radial-gradient(ellipse 54% 46% at 88% 24%, rgba(242, 221, 182, 0.1), transparent 64%),
+    radial-gradient(ellipse 46% 40% at 62% 96%, rgba(238, 119, 120, 0.12), transparent 66%),
+    linear-gradient(178deg, #1b2c53 0%, #16264a 58%, #131f3d 100%);
+}
+.kz-stage > * { position: relative; z-index: 2; }
+.kz-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: radial-gradient(rgba(242, 221, 182, 0.16) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(ellipse 74% 62% at 50% 42%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(ellipse 74% 62% at 50% 42%, #000 0%, transparent 78%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+/* The seam where the dark stage hands over to the cream page. */
+.kz-stage-seam {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(217, 181, 113, 0.55), transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  THE 5-DAY SPINE  (the page's ONE heavy motion moment)
+ *
+ *  The rail fills as you scroll and each numbered node ignites when the fill
+ *  reaches it. Progress is a single CSS variable (--tl-p, 0 → 1) written by a
+ *  rAF-throttled scroll handler; everything else is pure CSS off that variable,
+ *  so scrolling never triggers a React render per frame.
+ *
+ *  The node's centring transform and its snap animation sit on DIFFERENT
+ *  elements (.tl-node positions, .tl-node-inner animates) because one element
+ *  cannot both hold a centring translate and keyframe its transform.
+ * ═══════════════════════════════════════════════════════════════════════ */
+.tl-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 19px;
+  width: 3px;
+  transform: translateX(-50%);
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.tl-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: top center;
+  transform: scaleY(var(--tl-p, 0));
+  background: linear-gradient(180deg, #f2ddb6 0%, #d9b571 46%, #1f325c 100%);
+  border-radius: 3px;
+  transition: transform 0.12s linear;
+}
+
+.tl-node {
+  position: absolute;
+  top: 24px;
+  left: 19px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.tl-node-inner {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--canvas);
+  border: 2px solid var(--line-strong);
+  color: var(--ink-soft);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    background 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s ease,
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Lit: the glow reads as the rail's light spilling out of the node, not as a
+   drop shadow. */
+.tl-node.is-on .tl-node-inner {
+  background: linear-gradient(160deg, #2b4275 0%, #1f325c 62%, #16264a 100%);
+  border-color: rgba(217, 181, 113, 0.7);
+  color: var(--gold);
+  box-shadow:
+    0 0 0 5px rgba(242, 221, 182, 0.28),
+    0 0 18px 2px rgba(217, 181, 113, 0.45),
+    0 8px 18px -8px rgba(31, 50, 92, 0.5);
+  animation: lego-snap 0.62s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+@keyframes tl-ping {
+  0% { transform: scale(0.96); opacity: 0.5; }
+  70%, 100% { transform: scale(1.32); opacity: 0; }
+}
+.tl-node-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+.tl-node.is-on .tl-node-ring {
+  background: rgba(217, 181, 113, 0.45);
+  animation: tl-ping 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  z-index: -1;
+}
+
+@media (min-width: 640px) {
+  .tl-rail { left: 50%; }
+  /* Even rows sit in the left column so their node hangs off the RIGHT edge;
+     odd rows are the mirror. Both land dead centre on the rail. */
+  .tl-node-right { left: auto; right: 0; transform: translateX(50%); }
+  .tl-node-left { left: 0; right: auto; transform: translateX(-50%); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  THE CLOSING RECAP — the page's premium peak
+ *  A layered frame, a gold medallion seal, and a thin gold flourish broken by
+ *  a centred ornament, like the title page of a bound book. The
+ *  pseudo-elements are why this lives in CSS rather than inline styles.
+ * ═══════════════════════════════════════════════════════════════════════ */
+.kz-recap {
+  position: relative;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 72px 56px 56px;
+  border-radius: 6px;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 92% 58% at 50% 0%, rgba(242, 221, 182, 0.34), transparent 66%),
+    var(--canvas);
+  box-shadow:
+    0 0 0 1px rgba(31, 50, 92, 0.1),
+    0 0 0 7px var(--canvas),
+    0 0 0 8px rgba(217, 181, 113, 0.6),
+    0 0 70px -12px rgba(217, 181, 113, 0.34),
+    0 54px 96px -44px rgba(31, 50, 92, 0.28);
+}
+.kz-recap > * { position: relative; z-index: 2; }
+.kz-recap::before {
+  content: '';
+  position: absolute;
+  top: 26px;
+  left: 17%;
+  right: 17%;
+  height: 1px;
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(217, 181, 113, 0.9) 30%,
+    rgba(217, 181, 113, 0.9) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+.kz-recap::after {
+  content: '✦';
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--gold-deep);
+  background: var(--canvas);
+  padding: 0 8px;
+  pointer-events: none;
+}
+
+.kz-seal {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  margin: 0 auto 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 252, 244, 0.7), transparent 56%),
+    linear-gradient(180deg, #f7ead0 0%, #e9cf9d 55%, #cfa863 100%);
+  box-shadow:
+    0 0 0 1.5px rgba(168, 124, 51, 0.4),
+    0 0 0 5px var(--canvas),
+    0 0 0 6.5px rgba(217, 181, 113, 0.7),
+    0 14px 30px -8px rgba(168, 124, 51, 0.3),
+    inset 0 1px 0 rgba(255, 253, 248, 0.7);
+}
+.kz-seal svg { width: 31px; height: 31px; color: #7a5a25; }
+
+/* The struck anchor price draws its own strike-through on reveal, then the
+   real number pops in lit. The value collapse is dramatised at the exact
+   moment of decision (C3). */
+@keyframes kz-strike {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.kz-strike { position: relative; display: inline-block; }
+.kz-strike::after {
+  content: '';
+  position: absolute;
+  left: -3%;
+  right: -3%;
+  top: 52%;
+  height: 2px;
+  background: var(--ink-soft);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+.bw-in .kz-strike::after,
+.lego-in .kz-strike::after,
+.lego-done .kz-strike::after {
+  animation: kz-strike 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
+@keyframes kz-price-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.92); }
+  62% { opacity: 1; transform: translateY(0) scale(1.05); }
+  100% { opacity: 1; transform: none; }
+}
+.bw-in .kz-price,
+.lego-in .kz-price,
+.lego-done .kz-price {
+  animation: kz-price-pop 0.6s cubic-bezier(0.34, 1.5, 0.64, 1) 0.75s both;
+}
+
+/* The lit price itself: gradient-clipped gold with a faint glow behind it. */
+.kz-lit {
+  background: linear-gradient(150deg, #d9b571 0%, #a87c33 46%, #8a6424 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(217, 181, 113, 0.42));
+}
+
+/* ── the ruled ledger (recap rows + mechanism rows) ───────────────────────
+   A hairline-divided list, not a stack of cards. A ruled ledger reads as
+   audited and accountable, which is what sells competence (C9). */
+.kz-ledger > li + li { border-top: 1px solid var(--line); }
+
+/* ── the review wall ──────────────────────────────────────────────────────
+   Column-masonry, so screenshots of different heights tile without gaps. */
+.kz-masonry { column-gap: 16px; }
+.kz-masonry > * {
+  break-inside: avoid;
+  margin-bottom: 16px;
+}
+@media (min-width: 640px) { .kz-masonry { column-count: 2; } }
+@media (min-width: 1024px) { .kz-masonry { column-count: 3; } }
+
+/* ── the docked CTA ─────────────────────────────────────────────────────── */
+@keyframes kz-dock {
+  0% { opacity: 0; transform: translate3d(0, 100%, 0); }
+  62% { opacity: 1; transform: translate3d(0, -6px, 0); }
+  80% { transform: translate3d(0, 2px, 0); }
+  100% { opacity: 1; transform: none; }
+}
+.kz-dock {
+  animation: kz-dock 0.78s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.35s;
+}
+
+@media (max-width: 720px) {
+  .kz-recap { padding: 58px 22px 40px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  REDUCED MOTION — nothing here is load-bearing, so all of it goes, and no
+ *  reveal is ever left hidden.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .bw-js .bw-reveal-up,
+  .bw-js .bw-reveal-up-sm,
+  .bw-js .bw-reveal-left,
+  .bw-js .bw-reveal-right,
+  .bw-js .bw-reveal-scale,
+  .bw-js .bw-reveal-fade {
+    opacity: 1;
+    transform: none;
+  }
+  .bw-js [data-lego],
+  .bw-js [data-lego-loop],
+  .bw-js [data-lego-stud] {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  /* The strike and the price must still END in their finished state, or the
+     closing offer renders with no strike-through and an invisible price. */
+  .bw-in .kz-strike::after,
+  .lego-in .kz-strike::after,
+  .lego-done .kz-strike::after {
+    animation: none !important;
+    transform: scaleX(1) !important;
+  }
+  .bw-in .kz-price,
+  .lego-in .kz-price,
+  .lego-done .kz-price {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .cta-shimmer::after,
+  .tl-node.is-on .tl-node-ring {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .cta-breath,
+  .tl-node.is-on .tl-node-inner { animation: none !important; }
+  .kz-dock { animation: none !important; opacity: 1; transform: none; }
+  .tl-fill { transition: none !important; }
+}
+
+/* ══ Announcement marquee ═════════════════════════════════════════════════
+   The bar scrolls continuously rather than wrapping onto two lines at narrow
+   widths, which is what it used to do.
+
+   The track holds the segment list TWICE and translates by exactly -50%. That
+   is what makes the loop seamless: at the moment it resets, the second copy is
+   sitting precisely where the first began, so there is no jump and no gap. Any
+   other distance leaves a visible seam.
+
+   Duration scales with content, not with viewport, so the reading speed stays
+   constant on a phone and on a desktop. Paused on hover so a reader can finish
+   a line, and stopped entirely under prefers-reduced-motion, where an endlessly
+   moving strip is exactly what the setting exists to prevent. */
+/* ── the testimonial rail ────────────────────────────────────────────────
+   Same machinery as the announcement marquee below, at a slower pace and with
+   a wider feathered edge, because these are portrait cards rather than a line
+   of text.
+
+   The mask sits on the RAIL, never on the track: masking the moving element
+   would fade the cards against their own motion instead of against the page.
+
+   It pauses on hover and on focus-within, so a keyboard user can reach a card
+   without it sliding away, and data-playing pauses it outright while a clip is
+   open, because nothing is worse than a video walking off screen while you are
+   watching it. */
+.kz-rail {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 4rem,
+    #000 calc(100% - 4rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 4rem,
+    #000 calc(100% - 4rem),
+    transparent 100%
+  );
+}
+
+.kz-rail-track {
+  display: flex;
+  width: max-content;
+  gap: 20px;
+  padding-right: 20px;
+  animation: kz-rail-scroll 92s linear infinite;
+  will-change: transform;
+}
+
+/* The second rail runs the other way, so the two read as a pair rather than as
+   the same effect twice. */
+.kz-rail-track--reverse {
+  animation-direction: reverse;
+}
+
+.kz-rail:hover .kz-rail-track,
+.kz-rail:focus-within .kz-rail-track,
+.kz-rail[data-playing='true'] .kz-rail-track {
+  animation-play-state: paused;
+}
+
+@keyframes kz-rail-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.kz-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 2.5rem,
+    #000 calc(100% - 2.5rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 2.5rem,
+    #000 calc(100% - 2.5rem),
+    transparent 100%
+  );
+}
+
+.kz-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: kz-marquee-scroll 38s linear infinite;
+  will-change: transform;
+}
+
+.kz-marquee:hover .kz-marquee-track,
+.kz-marquee:focus-within .kz-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes kz-marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kz-rail-track { animation: none !important; }
+  .kz-marquee-track {
+    animation: none;
+    /* one copy only, centred, so the duplicate is never visible when static */
+    width: 100%;
+    justify-content: center;
+  }
+  .kz-marquee-track > [data-marquee-copy='2'] {
+    display: none;
+  }
+  .kz-marquee {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+/* ══ Horizontal overflow guard ════════════════════════════════════════════
+   The page has a full-bleed marquee and a stat row pulled up on a negative
+   margin, both of which can push a scrollbar on a narrow phone if anything
+   inside them grows. `clip` rather than `hidden`: hidden on the root element
+   creates a scroll container and silently breaks position: sticky, which this
+   page uses for the docked CTA. */
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+/* ══ Legal pages ══════════════════════════════════════════════════════════
+   One set of rules for all three, so privacy, terms and refund cannot drift
+   apart typographically. Values follow the checkout's scale. */
+.legal-content h2 {
+  margin-top: 2.5rem;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #1f325c;
+}
+@media (min-width: 640px) {
+  .legal-content h2 { font-size: 24px; }
+}
+.legal-content h3 {
+  margin-top: 1.5rem;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f325c;
+}
+.legal-content p { margin-top: 0.75rem; }
+.legal-content ul {
+  margin-top: 0.75rem;
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.legal-content ul > li { margin-top: 0.375rem; line-height: 1.7; }
+.legal-content ul > li::marker { color: #a87c33; }
+.legal-content a {
+  font-weight: 500;
+  color: #8a6424;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-content strong { font-weight: 600; color: #1f325c; }
