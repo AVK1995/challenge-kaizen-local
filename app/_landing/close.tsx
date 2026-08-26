@@ -62,9 +62,13 @@ import {
  * To go live, fill PHOTOS with paths. Any entry left null keeps its reserved
  * slot, so the section can also run with only the lead shot supplied.
  */
+/* Cropped to the exact ratios these slots use, so object-cover never has to
+   cut anything: the lead was trimmed at the sides to 3:4, and both squares were
+   biased UPWARDS out of taller frames so the faces, and the award plaque,
+   survive the crop. */
 const PHOTOS: { lead: string | null; small: [string | null, string | null] } = {
-  lead: null,
-  small: [null, null],
+  lead: '/images/prerna-portrait.jpg',
+  small: ['/images/prerna-session.jpg', '/images/prerna-award.jpg'],
 };
 
 /* One slot. Renders the real image when a path exists and a reserved box at the
@@ -120,11 +124,21 @@ function Guide() {
             src={PHOTOS.lead}
             ratio="3 / 4"
             label="Lead portrait"
-            alt="Prerna, founder of Kaizen"
+            alt="Prerna, founder of Kaizen, at home in Goa"
           />
           <div className="grid grid-cols-2 gap-3">
-            <GuideShot src={PHOTOS.small[0]} ratio="1 / 1" label="Detail 1" alt="" />
-            <GuideShot src={PHOTOS.small[1]} ratio="1 / 1" label="Detail 2" alt="" />
+            <GuideShot
+              src={PHOTOS.small[0]}
+              ratio="1 / 1"
+              label="Detail 1"
+              alt="Prerna leading a guided meditation session at Kaizen"
+            />
+            <GuideShot
+              src={PHOTOS.small[1]}
+              ratio="1 / 1"
+              label="Detail 2"
+              alt="Prerna receiving Kaizen's award at the Business Goa Awards for Corporate Excellence 2024"
+            />
           </div>
         </div>
 
