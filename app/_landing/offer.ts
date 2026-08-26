@@ -22,8 +22,8 @@ export const PRICE = `₹${PRICE_RUPEES.toLocaleString('en-IN')}`;
 /** The anchor the announcement bar names. Rising, per the source copy. */
 export const PRICE_RISES_TO = '₹1599';
 export const START_DATE = '9th September';
-export const SESSION_TIMES = '6 AM & 7 PM';
-export const SESSION_TIMES_TZ = '6 AM or 7 PM IST';
+export const SESSION_TIMES = '6:30 AM & 7 PM';
+export const SESSION_TIMES_TZ = '6:30 AM or 7 PM IST';
 
 /**
  * ⚠️ PLACEHOLDER — DO NOT PUBLISH AS-IS.

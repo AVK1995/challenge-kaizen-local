@@ -42,7 +42,7 @@ const manrope = Manrope({
   display: 'swap',
 });
 
-const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating perimenopause and menopause: movement, mindfulness and practical nutrition guidance. Starts ${START_DATE}, ${SESSION_TIMES}, live on Zoom, for ${PRICE}.`;
+const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating perimenopause and menopause: Pilates, yoga, mindfulness and breathwork. Starts ${START_DATE}, ${SESSION_TIMES}, live on Zoom, for ${PRICE}.`;
 
 /* The live origin. Without a metadataBase Next resolves every share URL and
    every relative OG asset against localhost, so a link pasted into WhatsApp

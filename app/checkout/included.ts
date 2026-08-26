@@ -8,11 +8,10 @@
  */
 export const RECAP: { title: string; value: number }[] = [
   { title: '5-Day Live (Peri)Menopause Reset Challenge', value: 2500 },
-  { title: 'Seed Cycling Made Simple', value: 497 },
-  { title: 'The One-Stretch Morning Mobility Reset', value: 497 },
-  { title: 'The 4-7-8 Calm & Sleep Breathwork Guide', value: 497 },
-  { title: 'The 5-Minute Facial De-Puffing Routine', value: 497 },
-  { title: 'Guided Breathwork & Meditation Collection', value: 997 },
+  { title: 'Kaizen Menopause Nutrition Playbook', value: 997 },
+  { title: 'Kaizen Morning Mobility Reset', value: 497 },
+  { title: 'Pranayam for Better Sleep', value: 497 },
+  { title: 'Nervous System Reset with Prerna', value: 497 },
 ];
 
 export const VALUE_TOTAL = RECAP.reduce((n, r) => n + r.value, 0);

@@ -20,14 +20,20 @@
  * is joined back into one string; no wording, ordering or punctuation is
  * changed, and nothing is added.
  */
-import { ArrowRight, BowlFood, CalendarBlank, Clock, Compass, FlowerLotus, PersonSimpleWalk, Sparkle, UsersThree, VideoCamera, XSquare } from '@phosphor-icons/react/dist/ssr';
+import { ArrowRight, CalendarBlank, Clock, Compass, FlowerLotus, House, Moon, PersonSimpleWalk, UsersThree, VideoCamera, XSquare } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import Close from './close';
 import { legoBrick, legoDelay } from './lego-style';
 import { domAnimation, LazyMotion } from './motion-lite';
-import { CHECKOUT_HREF, CTA_LABEL, CTA_NOTE, SESSION_TIMES } from './offer';
+import {
+  CHECKOUT_HREF,
+  CTA_LABEL,
+  CTA_NOTE,
+  SESSION_TIMES,
+  SESSION_TIMES_TZ,
+} from './offer';
 import Proof from './proof';
 import { C, SectionHeading } from './shared';
 import Toolkit from './toolkit';
@@ -52,28 +58,28 @@ const EXPERIENCE = [
   },
   {
     icon: PersonSimpleWalk,
-    title: 'Supportive Movement for Stiffness & Mobility',
-    body: 'Practise gentle, guided movement designed to loosen stiff joints and shoulders, improve mobility and help everyday movement feel more comfortable.',
+    title: 'Movement That Meets You Where You Are',
+    body: 'Practise supportive movement without forcing, punishing or pushing your changing body beyond what feels comfortable.',
   },
   {
     icon: FlowerLotus,
-    title: 'Mindfulness That Calms Your System',
-    body: 'Experience grounding, breathwork and mindfulness practices that help settle unexplained anxiety, restlessness and the feeling of constantly being on edge.',
+    title: 'Tools for Anxious, Restless Moments',
+    body: 'Learn simple practices you can return to when anxiety rises, your thoughts feel unsettled or you cannot seem to switch off.',
   },
   {
-    icon: BowlFood,
-    title: 'Hormone-Supportive Nutrition Guidance',
-    body: 'Understand practical food choices that can better support your body through perimenopause and menopause, without restrictive diets or complicated meal plans.',
-  },
-  {
-    icon: Sparkle,
-    title: 'Less Facial Puffiness & Inflammation',
-    body: 'Learn simple face-yoga techniques that support lymphatic drainage, ease facial puffiness and help your face look fresher, more relaxed and naturally youthful.',
+    icon: Moon,
+    title: 'Support for More Restful Sleep',
+    body: 'Experience calming techniques that help your mind slow down and your body feel more prepared to rest.',
   },
   {
     icon: Compass,
-    title: 'Practical Guidance for Your Changing Body',
-    body: 'Understand how perimenopause and menopause can affect your sleep, mood, energy and movement, so you can respond to these changes with greater clarity.',
+    title: 'A Deeper Connection With Your Body',
+    body: 'Begin recognising the signals your body is sending, instead of feeling confused by symptoms that seem sudden or unrelated.',
+  },
+  {
+    icon: House,
+    title: 'Practices You Can Continue at Home',
+    body: 'Take away simple movement, mindfulness and breathwork practices that can become part of your routine beyond the five days.',
   },
   {
     icon: UsersThree,
@@ -159,28 +165,28 @@ function Experience() {
 const DAYS = [
   {
     n: 'Day 1',
-    title: 'Mat Pilates + Mobility Reset',
-    body: 'Begin with guided mat Pilates and supportive movement to loosen stiff joints and shoulders, improve mobility and help your body feel more comfortable.',
+    title: 'Mat Pilates for Pain & Stiffness',
+    body: 'Begin with guided mat Pilates designed to loosen stiff joints and shoulders, ease everyday discomfort and help your body move more comfortably.',
   },
   {
     n: 'Day 2',
-    title: 'Gentle Yoga + Breathwork',
-    body: 'Use gentle yoga, mindful movement and breathwork to release built-up tension, improve flexibility and create greater ease in your body.',
+    title: 'Hatha Yoga for Stress & Anxiety',
+    body: 'Use Hatha Yoga and mindful movement to release built-up tension, settle restlessness and create greater calm in your body and mind.',
   },
   {
     n: 'Day 3',
-    title: 'Mindfulness + Sound Healing',
-    body: 'Experience calming mindfulness and sound-healing practices designed to settle restlessness, calm your nervous system and support more peaceful sleep.',
+    title: 'Mat Pilates for Strength & Mobility',
+    body: 'Build strength, improve mobility and develop better support through your body with a second guided mat Pilates session.',
   },
   {
     n: 'Day 4',
-    title: 'Face Yoga + Facial De-Puffing',
-    body: 'Learn simple face-yoga techniques that support lymphatic drainage, ease facial puffiness and promote a fresher, naturally youthful appearance.',
+    title: 'Yoga Nidra + EFT for Better Sleep',
+    body: 'Experience Yoga Nidra and EFT practices designed to release built-up stress, quiet a restless mind and prepare your body for deeper sleep.',
   },
   {
     n: 'Day 5',
-    title: 'Nutrition + Mind-Body Integration',
-    body: 'Bring everything together with practical hormone-supportive nutrition guidance, a recap of the practices and clear next steps for supporting yourself beyond the challenge.',
+    title: 'Breathwork for Hormonal Balance',
+    body: 'Bring the five days together with guided breathwork that deepens your mind-body connection and helps you feel calmer and more balanced through hormonal changes.',
   },
 ];
 
@@ -254,7 +260,7 @@ function Schedule() {
 
   return (
     <section className="px-4 py-12 sm:py-20 lg:py-24" style={{ background: C.canvasAlt }}>
-      <SectionHeading sub="Each day adds a new layer to your (peri)menopause reset, helping you feel more comfortable in your body, calmer in your mind and better supported through hormonal changes. Join live at 6 AM or 7 PM IST.">
+      <SectionHeading sub={`Each day focuses on a different part of your (peri)menopause reset, from easing pain & stiffness to calming anxiety, building mobility, sleeping better and reconnecting with your changing body. Join live at ${SESSION_TIMES_TZ}.`}>
         Your <span style={{ color: C.goldDeep }}>5-Day Schedule</span>
       </SectionHeading>
 
@@ -418,9 +424,9 @@ const RECOGNITION: [string, string, string][] = [
     ' make it harder to think clearly, focus and move through your day like you used to.',
   ],
   [
-    'The diet and exercise habits that once helped you ',
-    'no longer give you the same results',
-    ', and you’re unsure what your body needs now.',
+    'The workouts and wellness routines that once helped you ',
+    'no longer feel right for your body',
+    ', and you’re unsure whether to push harder, slow down or try something different.',
   ],
   [
     'You may be experiencing ',

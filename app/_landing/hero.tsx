@@ -192,10 +192,10 @@ export function Hero() {
               className="mx-auto mt-6 max-w-[600px] text-[16px] leading-[1.7] lg:mx-0"
               style={{ color: C.onDarkMute }}
             >
-              Experience five days of expert-led movement, mindfulness &amp;
-              practical nutrition guidance designed to ease common
-              (peri)menopause symptoms and help you feel lighter in your body,
-              calmer in your mind &amp; more like yourself again. Starts{' '}
+              Experience five days of expert-led Pilates, yoga, mindfulness
+              &amp; breathwork designed to ease common (peri)menopause symptoms
+              and help you feel lighter in your body, calmer in your mind &amp;
+              more like yourself again. Starts{' '}
               {START_DATE}, live on Zoom.
             </p>
 
@@ -293,7 +293,7 @@ export function Hero() {
                 className="inline-flex items-center rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.18em]"
                 style={{ background: C.goldPale, color: C.goldInk }}
               >
-                MOVEMENT · MINDFULNESS · NUTRITION
+                PILATES · YOGA · MINDFULNESS · BREATHWORK
               </span>
 
               <h2

@@ -16,8 +16,7 @@ import {
   Bed,
   Brain,
   Check,
-  Drop,
-  ForkKnife,
+  HandHeart,
   Heart,
   Heartbeat,
   Lightbulb,
@@ -26,7 +25,7 @@ import {
   PersonSimpleWalk,
   Plus,
   Quotes,
-  Sparkle,
+  Steps,
   Sun,
   Waves,
 } from '@phosphor-icons/react/dist/ssr';
@@ -182,9 +181,9 @@ function Guide() {
           </figure>
 
           <p className="mt-7 text-[16px] leading-[1.75]" style={{ color: C.inkSoft }}>
-            That’s why she created this 5-Day Challenge, bringing movement,
-            mindfulness and nutrition into one guided experience, so you can feel
-            the difference for yourself before committing long-term.
+            That’s why she created this 5-Day Challenge, bringing Pilates, yoga,
+            mindfulness and breathwork into one guided experience, so you can
+            feel the difference for yourself before committing long-term.
           </p>
         </div>
       </div>
@@ -201,46 +200,46 @@ function Guide() {
  * icon-card grid, because the Experience section three screens up already is
  * one.
  *
- * The source copy numbered these 01, 02, 03, 04, 02, 05 — a repeated "02" and
- * no "06". Corrected on Atul's instruction: Nervous System Calming is 05 and
- * Facial Puffiness is 06, so the ledger now runs 01 to 06 unbroken.
+ * The v1 source numbered these 01, 02, 03, 04, 02, 05, a repeated "02" with no
+ * "06", and that had to be corrected by hand. The revised copy ships them
+ * numbered 01 to 06 correctly, so this ledger now follows the source exactly.
  */
 const PILLARS = [
   {
     n: '01',
-    title: 'Supportive Movement',
-    icon: PersonSimpleWalk,
-    body: 'Gentle movement helps loosen stiff joints and shoulders while improving everyday mobility.',
+    title: 'Your Symptoms Are Not Separate',
+    icon: Brain,
+    body: 'Poor sleep can affect your energy, stress can increase physical tension and discomfort can make it harder to rest. Supporting one area can positively influence another.',
   },
   {
     n: '02',
-    title: 'Stronger Mind-Body Connection',
-    icon: Brain,
-    body: 'Learn to recognise the signals your body is sending, understand what it needs and respond with greater awareness.',
+    title: 'You Work With Your Body',
+    icon: HandHeart,
+    body: 'The approach focuses on listening and responding to your changing body, instead of forcing it through routines that may no longer feel right.',
   },
   {
     n: '03',
-    title: 'Better Sleep Support',
-    icon: MoonStars,
-    body: 'Mindfulness and sound-based relaxation help quiet a restless mind and prepare your body for deeper rest.',
+    title: 'Movement Comes Without Punishment',
+    icon: PersonSimpleWalk,
+    body: 'Supportive movement helps you rebuild comfort, mobility and strength without treating exercise as another way to fight your body.',
   },
   {
     n: '04',
-    title: 'Hormone-Supportive Nutrition',
-    icon: ForkKnife,
-    body: 'Practical food choices help support your energy, digestion and overall well-being through hormonal changes.',
+    title: 'Your Nervous System Is Part of the Picture',
+    icon: Waves,
+    body: 'Calming practices help your system move away from constantly feeling restless, overwhelmed or on edge.',
   },
   {
     n: '05',
-    title: 'Nervous System Calming',
-    icon: Waves,
-    body: 'Grounding and breathwork help settle anxiety, restlessness and the feeling of constantly being on edge.',
+    title: 'Mind and Body Learn to Communicate',
+    icon: MoonStars,
+    body: 'Greater awareness helps you recognise your body’s signals, understand what it may need and respond more intentionally.',
   },
   {
     n: '06',
-    title: 'Facial Puffiness & Dullness',
-    icon: Sparkle,
-    body: 'Face yoga supports lymphatic drainage to ease puffiness and inflammation, helping your face look fresher, more toned and naturally youthful.',
+    title: 'The Experience Builds Gradually',
+    icon: Steps,
+    body: 'Each day adds a different layer of support, allowing you to experience how movement, rest and breathwork can work together.',
   },
 ];
 
@@ -311,13 +310,13 @@ function Mechanism() {
    is an accumulating list and nothing more: giving eight one-line items the
    weight of cards would be louder than their meaning. */
 const NOTICE: { text: string; icon: Icon }[] = [
-  { text: 'Morning stiffness starts to ease', icon: Sun },
+  { text: 'Pain and stiffness begin to ease', icon: Sun },
   { text: 'Joints and shoulders move more freely', icon: ArrowsOutCardinal },
+  { text: 'Strength and everyday mobility begin to improve', icon: BatteryHigh },
   { text: 'Sleep feels deeper and more restful', icon: Bed },
   { text: 'Anxiety and restlessness begin to settle', icon: Heartbeat },
   { text: 'The mind feels calmer and clearer', icon: Lightbulb },
-  { text: 'Facial puffiness and dullness reduce', icon: Drop },
-  { text: 'Energy improves through the day', icon: BatteryHigh },
+  { text: 'They understand their body’s signals better', icon: Brain },
   { text: 'They feel more at home in their bodies again', icon: Heart },
 ];
 
@@ -429,9 +428,9 @@ function TwoOptions() {
             OPTION 2
           </span>
           <p className="mt-5 text-[15px] leading-relaxed" style={{ color: C.onDark }}>
-            Take five days to experience movement, mindfulness and nutrition
-            together, understand what your changing body needs and begin feeling
-            more in control again.
+            Take five days to experience Pilates, yoga, mindfulness &amp;
+            breathwork together, understand what your changing body needs and
+            begin feeling more in control again.
           </p>
 
           <Link
@@ -472,11 +471,10 @@ function TwoOptions() {
  */
 const RECAP = [
   { what: '5-Day Live (Peri)Menopause Reset Challenge', value: '₹2,500' },
-  { what: 'Seed Cycling Made Simple Guide', value: '₹497' },
-  { what: 'One-Stretch Morning Mobility Reset', value: '₹497' },
-  { what: '4-7-8 Calm & Sleep Breathwork Guide', value: '₹497' },
-  { what: '5-Minute Facial De-Puffing Routine', value: '₹497' },
-  { what: 'Prerna’s Guided Breathwork & Meditation Collection', value: '₹997' },
+  { what: 'Kaizen Menopause Nutrition Playbook', value: '₹997' },
+  { what: 'Kaizen Morning Mobility Reset', value: '₹497' },
+  { what: 'Pranayam for Better Sleep', value: '₹497' },
+  { what: 'Nervous System Reset with Prerna', value: '₹497' },
 ];
 
 function Recap() {

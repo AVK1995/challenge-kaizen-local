@@ -22,13 +22,12 @@
  */
 import type { Icon } from '@phosphor-icons/react';
 import {
+  BowlFood,
   Broadcast,
   CheckCircle,
   Headphones,
   Lightning,
-  Plant,
   PersonSimpleTaiChi,
-  Sparkle,
   VideoCamera,
   Wind,
 } from '@phosphor-icons/react/dist/ssr';
@@ -39,55 +38,50 @@ import { Art, C, MediaPlaceholder, SectionEyebrow } from './shared';
 const LEAD = {
   n: '01',
   icon: Broadcast,
+  cover: '/images/challenge-days.png',
   title: '5-Day Live (Peri)Menopause Reset Challenge',
   value: '(₹2,500 Value)',
-  body: 'Experience five expert-led live sessions combining movement, mindfulness and practical nutrition guidance to help ease common symptoms and feel more in control of your body.',
+  body: 'Experience five expert-led live sessions combining movement and mindfulness to help ease common symptoms and feel more in control of your body.',
   tag: 'LIVE ACCESS · INCLUDED',
 };
 
+/* Four guides, and the covers now carry these exact titles. The revised copy
+   renamed every one of them, which also resolved a real problem: the artwork
+   said "Kaizen Menopause Nutrition Playbook" while the page said "Seed Cycling
+   Made Simple", and every cover's "GUIDE n OF 4" badge contradicted a list of
+   five bonuses. Names, count and badges now agree. */
 const BONUSES = [
   {
     n: '02',
     cover: '/images/guide-nutrition.png',
-    title: 'Seed Cycling Made Simple',
-    icon: Plant,
-    value: '(₹497 Value)',
-    body: 'A practical guide to the key seeds, how to use them and simple ways to include them in your meals to better support your body through hormonal changes.',
+    title: 'Kaizen Menopause Nutrition Playbook',
+    icon: BowlFood,
+    value: '(₹997 Value)',
+    body: 'A practical guide to supporting your body through dietary changes, including techniques like seed cycling and easy recipes to make at home.',
   },
   {
     n: '03',
     cover: '/images/guide-mobility.png',
-    title: 'The One-Stretch Morning Mobility Reset',
+    title: 'Kaizen Morning Mobility Reset',
     icon: PersonSimpleTaiChi,
     value: '(₹497 Value)',
-    body: 'One simple, guided stretch you can practise at home whenever your shoulders, joints or body feel stiff and reluctant to move.',
+    body: 'A simple, guided routine you can practise at home whenever your shoulders, joints or body feel stiff and reluctant to move.',
   },
   {
     n: '04',
     cover: '/images/guide-sleep.png',
-    title: 'The 4-7-8 Calm & Sleep Breathwork Guide',
+    title: 'Pranayam for Better Sleep',
     icon: Wind,
     value: '(₹497 Value)',
-    body: 'Learn a simple breathing practice you can use when anxiety rises, your mind feels restless or you struggle to settle down for sleep.',
+    body: 'Learn a simple breathing practice you can use when your mind feels restless or you struggle to sleep.',
   },
   {
     n: '05',
-    /* ⚠️ NO COVER SUPPLIED. The other four guides have one, so this card falls
-       back to a labelled placeholder rather than shipping a gap nobody sees.
-       Ask for a matching square mockup. */
-    cover: '',
-    title: 'The 5-Minute Facial De-Puffing Routine',
-    icon: Sparkle,
-    value: '(₹497 Value)',
-    body: 'A simple face-yoga routine to support lymphatic drainage, ease facial puffiness and help your face look fresher and more relaxed.',
-  },
-  {
-    n: '06',
     cover: '/images/guide-nervous-system.png',
-    title: 'Prerna’s Guided Breathwork & Meditation Collection',
+    title: 'Nervous System Reset with Prerna',
     icon: Headphones,
-    value: '(₹997 Value)',
-    body: 'Get exclusive access to Prerna’s guided breathwork and meditation recordings, so you can return to a calmer, more grounded state whenever you need it.',
+    value: '(₹497 Value)',
+    body: 'A 10-minute guided breathwork to gently reset the nervous system by reconnecting with the five elements of nature: Earth, Water, Fire, Air, and Space.',
   },
 ];
 
@@ -182,7 +176,7 @@ export default function Toolkit() {
             {/* Reserved at the ratio the real still will use, so nothing
                 reflows when the art lands. */}
             <Art
-              src="/images/challenge-days.png"
+              src={LEAD.cover}
               alt="The five day cards: Mat Pilates and Mobility, Gentle Yoga and Breathwork, Mindfulness and Sound Healing, Face Yoga and De-Puffing, Nutrition and Integration"
               ratio="1 / 1"
               sizes="(min-width: 640px) 240px, 100vw"
@@ -191,37 +185,17 @@ export default function Toolkit() {
           </div>
         </article>
 
-        {/* ── the five guides ──────────────────────────────────────────── */}
-        <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
+        {/* ── the four guides ──────────────────────────────────────────
+            Four tiles, so the orphan maths the five-card version needed is
+            gone: 2 x 2 on tablet, 4 across on desktop, no stranded card at
+            either breakpoint. */}
+        <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {BONUSES.map((b, i) => {
-            /* Five cards strand orphans at both breakpoints, and the fix is
-               different at each.
-
-               lg: five into three columns leaves TWO stranded hard-left with a
-               column-wide hole beside them. So the desktop grid is SIX columns
-               with a 2-column span per card — visually identical to three
-               columns, but the half-column offset now exists, so the pair
-               starts at column 2 and sits dead centre. A 3-column grid cannot
-               do this: centring two items across three tracks needs fractional
-               placement.
-
-               sm: five into two columns leaves ONE. It spans the row but is
-               width-capped and centred, so it reads as a normal card. */
-            const startsTail = i === BONUSES.length - 2;
-            const isOrphan = i === BONUSES.length - 1;
-            const placement = [
-              'lg:col-span-2',
-              startsTail ? 'lg:col-start-2' : '',
-              isOrphan ? 'sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-[calc(50%-10px)]' : '',
-              isOrphan ? 'lg:col-span-2 lg:mx-0 lg:max-w-none' : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
             return (
               <li
                 key={b.n}
                 data-lego=""
-                className={`lego-hover flex flex-col rounded-3xl p-7 ${placement}`}
+                className="lego-hover flex flex-col rounded-3xl p-7"
                 style={{
                   ...legoBrick(i + 1, 80),
                   background: C.canvasAlt,
