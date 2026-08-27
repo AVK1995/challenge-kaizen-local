@@ -483,13 +483,21 @@ function TwoOptions() {
  * the peak is earned with craft and depth rather than by turning the lights
  * off.
  */
-const RECAP = [
-  { what: '5-Day Live (Peri)Menopause Reset Challenge', value: '₹2,500' },
-  { what: 'Kaizen Menopause Nutrition Playbook', value: '₹997' },
-  { what: 'Kaizen Morning Mobility Reset', value: '₹497' },
-  { what: 'Pranayam for Better Sleep', value: '₹497' },
-  { what: 'Nervous System Reset with Prerna', value: '₹497' },
+const RECAP: { what: string; value: number }[] = [
+  { what: '5-Day Live (Peri)Menopause Reset Challenge', value: 2500 },
+  { what: 'Kaizen Menopause Nutrition Playbook', value: 997 },
+  { what: 'Kaizen Morning Mobility Reset', value: 497 },
+  { what: 'Pranayam for Better Sleep', value: 497 },
+  { what: 'Nervous System Reset with Prerna', value: 497 },
 ];
+
+/* SUMMED, never typed. This line previously read a hard-coded "₹5,485", which
+   silently became wrong the moment the revised copy dropped an item and
+   revalued another: the ledger showed five rows adding to ₹4,988 with a total
+   of ₹5,485 struck out beside them, on the one beat of the page a reader
+   actually does the arithmetic on. Deriving it makes that impossible. */
+const RECAP_TOTAL = RECAP.reduce((n, r) => n + r.value, 0);
+const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 function Recap() {
   return (
@@ -550,7 +558,7 @@ function Recap() {
                 className="shrink-0 font-display text-[16px] font-semibold"
                 style={{ color: C.inkSoft }}
               >
-                {r.value}
+                {inr(r.value)}
               </span>
             </li>
           ))}
@@ -572,7 +580,7 @@ function Recap() {
             className="kz-strike font-display text-[22px] font-semibold"
             style={{ color: C.inkSoft }}
           >
-            ₹5,485
+            {inr(RECAP_TOTAL)}
           </span>
         </div>
 

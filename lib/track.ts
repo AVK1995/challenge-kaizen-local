@@ -31,7 +31,15 @@ const ITEM: Ga4Item = {
 };
 const money = { value: VALUE, currency: 'INR', items: [ITEM] };
 
-type Person = { email?: string; phone?: string; firstName?: string; lastName?: string };
+type Person = {
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  city?: string;
+  /** ISO 3166-1 alpha-2, from the checkout's country picker. */
+  country?: string;
+};
 
 /** Fire-and-forget: analytics must never block or fail a click. */
 function capi(eventName: string, person: Person = {}) {

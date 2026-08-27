@@ -49,12 +49,21 @@ export function hashCountry(v: string) {
   return s ? sha256Hex(s) : undefined;
 }
 
+/* City: lowercase, and strip spaces and punctuation entirely. Meta's own
+   normalisation removes them, so "New Delhi" and "newdelhi" must hash to the
+   same value or the match is silently lost. */
+export function hashCity(v: string) {
+  const s = v.trim().toLowerCase().replace(/[^a-z]/g, '');
+  return s ? sha256Hex(s) : undefined;
+}
+
 export type UserSignals = {
   email?: string;
   phone?: string;
   firstName?: string;
   lastName?: string;
   country?: string;
+  city?: string;
   externalId?: string;
   fbc?: string;
   fbp?: string;
@@ -69,6 +78,7 @@ function buildUserData(u: UserSignals) {
     ...(u.firstName && { fn: [hashName(u.firstName)!] }),
     ...(u.lastName && { ln: [hashName(u.lastName)!] }),
     ...(u.country && { country: [hashCountry(u.country)!] }),
+    ...(u.city && { ct: [hashCity(u.city)!] }),
     ...(u.externalId && { external_id: [sha256Hex(u.externalId)] }),
     ...(u.fbc && { fbc: u.fbc }),
     ...(u.fbp && { fbp: u.fbp }),
@@ -92,6 +102,11 @@ export async function sendCapiEvent(params: {
   valueRupees: number;
   currency: string;
   contentName?: string;
+  /* Arbitrary custom_data properties. Meta has no standard user_data field for
+     something like occupation, but custom_data accepts extra keys, and they can
+     be used to build audiences and read breakdowns. Never put PII here:
+     custom_data is NOT hashed. */
+  custom?: Record<string, string>;
   utm?: Utm;
   testEventCode?: string;
 }): Promise<{ ok: boolean; status: number; body: unknown }> {
@@ -111,6 +126,7 @@ export async function sendCapiEvent(params: {
           ...(params.utm?.source && { utm_source: params.utm.source }),
           ...(params.utm?.medium && { utm_medium: params.utm.medium }),
           ...(params.utm?.campaign && { utm_campaign: params.utm.campaign }),
+          ...(params.custom ?? {}),
         },
       },
     ],

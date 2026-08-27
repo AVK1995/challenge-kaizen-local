@@ -25,6 +25,9 @@ export type PabblyPurchase = {
   phone?: string;
   firstName?: string;
   lastName?: string;
+  city?: string;
+  country?: string;
+  occupation?: string;
   amountRupees: number;
   currency: string;
   product: string;
@@ -54,6 +57,9 @@ export async function sendPabblyPurchase(
         last_name: p.lastName ?? '',
         email: p.email ?? '',
         phone: p.phone ?? '',
+        city: p.city ?? '',
+        country: p.country ?? '',
+        occupation: p.occupation ?? '',
         amount: p.amountRupees,
         currency: p.currency,
         product: p.product,

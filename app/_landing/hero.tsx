@@ -8,8 +8,8 @@
  * COPY IS VERBATIM from COPY-SOURCE.md. Where a run-on line has been split
  * across elements the words and their order are untouched; nothing is
  * re-voiced, shortened or added. Two things the copy carries that need a human
- * decision are flagged at their call sites: the "#,###+" placeholder and the
- * "Price Increases To ₹1599 Tomorrow" line.
+ * decision are flagged at their call sites: the "Price Increases To ₹1599
+ * Tomorrow" line, which cannot run evergreen.
  *
  * The dark stage is the page's ONE dark section band, per the brief: light
  * theme only, hero in dark.
@@ -268,7 +268,11 @@ export function Hero() {
           <div>
             <div
               data-lego=""
-              className="rounded-[28px] p-7 sm:p-8"
+              /* Centred on mobile, left from lg up. On a phone the card is the
+                 whole screen and a centred stack reads as one deliberate
+                 object; on desktop it sits beside a left-aligned headline, and
+                 centring it there would break that shared edge. */
+              className="rounded-[28px] p-7 text-center sm:p-8 lg:text-left"
               style={{
                 ...legoDelay(2, 90),
                 background: C.canvas,
@@ -307,7 +311,7 @@ export function Hero() {
               </p>
 
               <div
-                className="mt-6 flex items-baseline gap-3 border-t pt-6"
+                className="mt-6 flex items-baseline justify-center gap-3 border-t pt-6 lg:justify-start"
                 style={{ borderColor: C.line }}
               >
                 <span className="kz-lit font-display text-[46px] font-semibold leading-none">

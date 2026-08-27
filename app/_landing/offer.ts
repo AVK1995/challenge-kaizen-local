@@ -26,13 +26,10 @@ export const SESSION_TIMES = '6:30 AM & 7 PM';
 export const SESSION_TIMES_TZ = '6:30 AM or 7 PM IST';
 
 /**
- * ⚠️ PLACEHOLDER — DO NOT PUBLISH AS-IS.
- * The source copy carries "#,###+" for women supported. A real, evidenceable
- * figure has to replace this before the page goes live; an invented number is
- * not an option. The page renders whatever is here verbatim, so a placeholder
- * left in this constant will ship visibly rather than silently.
+ * Women supported. The source copy shipped "#,###+" as a placeholder; Atul
+ * confirmed the real figure as 540+.
  */
-export const WOMEN_SUPPORTED = '#,###+';
+export const WOMEN_SUPPORTED = '540+';
 
 /**
  * The WhatsApp community invite. The thank-you page is built around joining it

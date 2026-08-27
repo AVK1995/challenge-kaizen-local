@@ -56,7 +56,15 @@ export async function POST(req: Request) {
       phone: typeof body.phone === 'string' ? body.phone : undefined,
       firstName: typeof body.firstName === 'string' ? body.firstName : undefined,
       lastName: typeof body.lastName === 'string' ? body.lastName : undefined,
-      country: 'in',
+      /* Was hard-coded 'in'. The checkout now asks, so an overseas buyer is no
+         longer reported as Indian, which is a wrong hashed value rather than a
+         missing one: worse than sending nothing. Falls back to India for the
+         landing-page events, which carry no form. */
+      country:
+        typeof body.country === 'string' && body.country.length === 2
+          ? body.country.toLowerCase()
+          : 'in',
+      city: typeof body.city === 'string' ? body.city : undefined,
       externalId:
         typeof body.externalId === 'string' ? body.externalId : undefined,
       fbc: typeof body.fbc === 'string' ? body.fbc : undefined,

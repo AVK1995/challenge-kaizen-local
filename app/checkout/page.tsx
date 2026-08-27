@@ -72,10 +72,55 @@ function loadRazorpay(): Promise<boolean> {
   });
 }
 
-type Fields = { name: string; email: string; phone: string };
+/* Dial codes carry the ISO-2 alongside them because Meta's CAPI wants the
+   COUNTRY as a hashed ISO 3166-1 alpha-2 code, not a dial code. India first,
+   then the places this audience actually lives. */
+const COUNTRIES: { iso: string; dial: string; label: string }[] = [
+  { iso: 'in', dial: '+91', label: 'India (+91)' },
+  { iso: 'ae', dial: '+971', label: 'UAE (+971)' },
+  { iso: 'gb', dial: '+44', label: 'UK (+44)' },
+  { iso: 'us', dial: '+1', label: 'USA (+1)' },
+  { iso: 'ca', dial: '+1', label: 'Canada (+1)' },
+  { iso: 'au', dial: '+61', label: 'Australia (+61)' },
+  { iso: 'sg', dial: '+65', label: 'Singapore (+65)' },
+  { iso: 'qa', dial: '+974', label: 'Qatar (+974)' },
+  { iso: 'om', dial: '+968', label: 'Oman (+968)' },
+  { iso: 'kw', dial: '+965', label: 'Kuwait (+965)' },
+  { iso: 'sa', dial: '+966', label: 'Saudi Arabia (+966)' },
+  { iso: 'nz', dial: '+64', label: 'New Zealand (+64)' },
+  { iso: 'za', dial: '+27', label: 'South Africa (+27)' },
+  { iso: 'my', dial: '+60', label: 'Malaysia (+60)' },
+  { iso: 'de', dial: '+49', label: 'Germany (+49)' },
+];
+
+/* Exactly the two the client asked for, and no "other": a two-way split is the
+   point of the question. The VALUE is what travels to the webhook, so keep it
+   stable even if the label is reworded. */
+const OCCUPATIONS = [
+  { value: 'working_professional', label: 'Working professional' },
+  { value: 'homemaker', label: 'Homemaker' },
+];
+
+type Fields = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  city: string;
+  country: string; // ISO-2
+  phone: string;
+  occupation: string;
+};
 
 export default function CheckoutPage() {
-  const [f, setF] = useState<Fields>({ name: '', email: '', phone: '' });
+  const [f, setF] = useState<Fields>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    city: '',
+    country: 'in',
+    phone: '',
+    occupation: '',
+  });
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState('');
@@ -101,15 +146,23 @@ export default function CheckoutPage() {
   const v = useMemo(() => {
     const digits = f.phone.replace(/\D/g, '');
     return {
-      name: f.name.trim().length > 1,
+      firstName: f.firstName.trim().length > 1,
+      lastName: f.lastName.trim().length > 0,
       email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()),
-      /* 10 digits, or 12 with a country code. libphonenumber-js would be
-         stricter but is not a dependency here; add it if this funnel starts
-         taking non-Indian numbers. */
-      phone: digits.length === 10 || digits.length === 12,
+      city: f.city.trim().length > 1,
+      /* The dial code is chosen from the picker, so this validates the SUBSCRIBER
+         number only: 7 to 12 digits covers every country in the list without
+         pulling in libphonenumber-js. India is the strict case at exactly 10. */
+      phone: f.country === 'in' ? digits.length === 10 : digits.length >= 7 && digits.length <= 12,
+      occupation: f.occupation !== '',
     };
   }, [f]);
-  const valid = v.name && v.email && v.phone;
+  const valid =
+    v.firstName && v.lastName && v.email && v.city && v.phone && v.occupation;
+
+  const dial = COUNTRIES.find((c) => c.iso === f.country)?.dial ?? '+91';
+  /* E.164 without the plus, which is what both Meta and Razorpay expect. */
+  const e164 = `${dial}${f.phone}`.replace(/\D/g, '');
 
   const startPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,9 +176,11 @@ export default function CheckoutPage() {
        real: details are valid and the buyer is committing. */
     trackInitiateCheckout({
       email: f.email.trim(),
-      phone: f.phone.replace(/\D/g, ''),
-      firstName: f.name.trim().split(' ')[0],
-      lastName: f.name.trim().split(' ').slice(1).join(' ') || undefined,
+      phone: e164,
+      firstName: f.firstName.trim(),
+      lastName: f.lastName.trim(),
+      city: f.city.trim(),
+      country: f.country,
     });
 
     try {
@@ -136,9 +191,13 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          name: f.name.trim(),
+          firstName: f.firstName.trim(),
+          lastName: f.lastName.trim(),
           email: f.email.trim(),
-          phone: f.phone.replace(/\D/g, ''),
+          phone: e164,
+          city: f.city.trim(),
+          country: f.country,
+          occupation: f.occupation,
           ...collectSignals(),
         }),
       });
@@ -162,9 +221,9 @@ export default function CheckoutPage() {
         name: 'Kaizen',
         description: '5-Day (Peri)Menopause Reset Challenge',
         prefill: {
-          name: f.name.trim(),
+          name: `${f.firstName.trim()} ${f.lastName.trim()}`.trim(),
           email: f.email.trim(),
-          contact: f.phone.replace(/\D/g, ''),
+          contact: e164,
         },
         theme: { color: C.navyDeep },
         modal: { ondismiss: () => setBusy(false) },
@@ -235,15 +294,32 @@ export default function CheckoutPage() {
               </p>
 
               <div className="mt-6 flex flex-col gap-4">
-                <Field
-                  label="Full name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="Your name"
-                  value={f.name}
-                  onChange={(x) => setF((s) => ({ ...s, name: x }))}
-                  bad={touched && !v.name}
-                />
+                {/* First and last are separate fields, not one "Full name"
+                    split on a space. Splitting guesses: it gives a two-word
+                    surname to the first name, and a single-word entry no last
+                    name at all. Meta hashes fn and ln independently, so a bad
+                    guess is a permanently worse match. */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Field
+                    label="First name"
+                    type="text"
+                    autoComplete="given-name"
+                    placeholder="First name"
+                    value={f.firstName}
+                    onChange={(x) => setF((s) => ({ ...s, firstName: x }))}
+                    bad={touched && !v.firstName}
+                  />
+                  <Field
+                    label="Last name"
+                    type="text"
+                    autoComplete="family-name"
+                    placeholder="Last name"
+                    value={f.lastName}
+                    onChange={(x) => setF((s) => ({ ...s, lastName: x }))}
+                    bad={touched && !v.lastName}
+                  />
+                </div>
+
                 <Field
                   label="Email"
                   type="email"
@@ -253,16 +329,96 @@ export default function CheckoutPage() {
                   onChange={(x) => setF((s) => ({ ...s, email: x }))}
                   bad={touched && !v.email}
                 />
+
                 <Field
-                  label="WhatsApp number"
-                  type="tel"
-                  autoComplete="tel"
-                  placeholder="+91 98XXX XXXXX"
-                  value={f.phone}
-                  onChange={(x) => setF((s) => ({ ...s, phone: x }))}
-                  bad={touched && !v.phone}
-                  note="Your session reminders go here."
+                  label="Town / City"
+                  type="text"
+                  autoComplete="address-level2"
+                  placeholder="Your town or city"
+                  value={f.city}
+                  onChange={(x) => setF((s) => ({ ...s, city: x }))}
+                  bad={touched && !v.city}
                 />
+
+                {/* The dial code is its own control rather than something the
+                    buyer types, so the number that reaches Meta and Razorpay is
+                    always a clean E.164 and the country arrives as an ISO-2 we
+                    can hash. */}
+                <label className="block">
+                  <span
+                    className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-[0.16em]"
+                    style={{ color: C.inkSoft }}
+                  >
+                    WhatsApp number
+                  </span>
+                  <div className="flex gap-2">
+                    <select
+                      className="w-[124px] shrink-0 rounded-xl px-3 py-3 text-[15px] outline-none"
+                      autoComplete="tel-country-code"
+                      aria-label="Country dialling code"
+                      value={f.country}
+                      onChange={(e) => setF((s) => ({ ...s, country: e.target.value }))}
+                      style={{
+                        background: C.canvasAlt,
+                        color: C.ink,
+                        border: `1px solid ${C.line}`,
+                      }}
+                    >
+                      {COUNTRIES.map((c) => (
+                        <option key={c.iso} value={c.iso}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      className="w-full rounded-xl px-4 py-3 text-[15px] outline-none"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel-national"
+                      placeholder="98XXX XXXXX"
+                      value={f.phone}
+                      onChange={(e) => setF((s) => ({ ...s, phone: e.target.value }))}
+                      aria-invalid={(touched && !v.phone) || undefined}
+                      style={{
+                        background: C.canvasAlt,
+                        color: C.ink,
+                        border: `1px solid ${touched && !v.phone ? C.coralInk : C.line}`,
+                      }}
+                    />
+                  </div>
+                  <span className="mt-1.5 block text-[11.5px]" style={{ color: C.inkSoft }}>
+                    Your session reminders go here.
+                  </span>
+                </label>
+
+                <label className="block">
+                  <span
+                    className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-[0.16em]"
+                    style={{ color: C.inkSoft }}
+                  >
+                    Are you a working professional or a homemaker?
+                  </span>
+                  <select
+                    className="w-full rounded-xl px-4 py-3 text-[15px] outline-none"
+                    value={f.occupation}
+                    onChange={(e) => setF((s) => ({ ...s, occupation: e.target.value }))}
+                    aria-invalid={(touched && !v.occupation) || undefined}
+                    style={{
+                      background: C.canvasAlt,
+                      color: f.occupation ? C.ink : C.inkSoft,
+                      border: `1px solid ${touched && !v.occupation ? C.coralInk : C.line}`,
+                    }}
+                  >
+                    <option value="" disabled>
+                      Select one
+                    </option>
+                    {OCCUPATIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               {touched && !valid && (

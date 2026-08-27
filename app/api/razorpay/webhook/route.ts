@@ -53,6 +53,13 @@ export async function POST(req: Request) {
 
   const valueRupees = amountRupees || CHECKOUT_CONFIG.amountRupees;
 
+  /* create-order packs the three utm_* values into one pipe-delimited note to
+     stay under Razorpay's 15-pair cap. Unpack in the same order it packed. */
+  const [utmSource = '', utmMedium = '', utmCampaign = ''] = String(
+    notes.utm ?? '',
+  ).split('|');
+  const country = String(notes.country ?? '') || 'in';
+
   /* GA4 purchase, server side. The browser copy on /thank-you only counts
      buyers who return to the page, which most UPI payers do not. Both are
      keyed on the payment id, so GA4 collapses the pair rather than counting
@@ -81,12 +88,15 @@ export async function POST(req: Request) {
         lastName: String(notes.lastName ?? ''),
         email: String(payment.email ?? notes.email ?? ''),
         phone: String(payment.contact ?? notes.phone ?? ''),
+        city: String(notes.city ?? ''),
+        country,
+        occupation: String(notes.occupation ?? ''),
         amountRupees: valueRupees,
         currency: CHECKOUT_CONFIG.currency,
         product: CHECKOUT_CONFIG.contentName,
-        utmSource: notes.utm_source,
-        utmMedium: notes.utm_medium,
-        utmCampaign: notes.utm_campaign,
+        utmSource,
+        utmMedium,
+        utmCampaign,
       })
     : { ok: false, status: 0 };
 
@@ -114,7 +124,8 @@ export async function POST(req: Request) {
       phone: payment.contact || notes.phone || undefined,
       firstName: notes.firstName || undefined,
       lastName: notes.lastName || undefined,
-      country: 'in',
+      country,
+      city: notes.city || undefined,
       externalId: notes.externalId || undefined,
       fbc: notes.fbc || undefined,
       fbp: notes.fbp || undefined,
@@ -122,11 +133,10 @@ export async function POST(req: Request) {
     valueRupees,
     currency: CHECKOUT_CONFIG.currency,
     contentName: CHECKOUT_CONFIG.contentName,
-    utm: {
-      source: notes.utm_source,
-      medium: notes.utm_medium,
-      campaign: notes.utm_campaign,
-    },
+    utm: { source: utmSource, medium: utmMedium, campaign: utmCampaign },
+    /* Not PII and not hashable, so it rides in custom_data rather than
+       user_data: it is a segment, not an identifier. */
+    ...(notes.occupation && { custom: { occupation: String(notes.occupation) } }),
     testEventCode: CHECKOUT_CONFIG.meta.testEventCode || undefined,
   });
 
