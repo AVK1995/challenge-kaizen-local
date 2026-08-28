@@ -40,6 +40,7 @@ import {
   trackInitiateCheckout,
 } from '@/lib/track';
 
+import BrandMark from '../_landing/brand-mark';
 import { C } from '../_landing/shared';
 import { RECAP, VALUE_TOTAL, inr } from './included';
 
@@ -219,6 +220,12 @@ export default function CheckoutPage() {
         amount: order.amount,
         currency: order.currency,
         name: 'Kaizen',
+        /* The client's own square lockup in the payment sheet, so the brand
+           does not disappear at the one moment the card details are typed.
+           ABSOLUTE, not a relative path: Razorpay renders this inside an iframe
+           served from its own domain, where `/brand/...` would resolve against
+           checkout.razorpay.com and silently 404 into a blank tile. */
+        image: `${window.location.origin}/brand/kaizen-square.jpg`,
         description: '5-Day (Peri)Menopause Reset Challenge',
         prefill: {
           name: `${f.firstName.trim()} ${f.lastName.trim()}`.trim(),
@@ -493,8 +500,10 @@ export default function CheckoutPage() {
   );
 }
 
-/* ── Header. A way back, and nothing else: every other link is a way to not
-      pay. ──────────────────────────────────────────────────────────────── */
+/* ── Header. The client's own wordmark and a way back, and nothing else:
+      every other link is a way to not pay. The mark is the same BrandMark the
+      landing page uses, on the same navy, so the buyer can see they are still
+      on Kaizen at the moment they are asked to pay. ─────────────────────── */
 function Header() {
   return (
     <header
@@ -502,7 +511,7 @@ function Header() {
       style={{ background: C.navyDeep, color: C.onDark }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-        <span className="font-display text-[17px] font-semibold">Kaizen</span>
+        <BrandMark height={34} onDark priority />
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] font-semibold"
