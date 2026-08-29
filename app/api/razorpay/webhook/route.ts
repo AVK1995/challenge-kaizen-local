@@ -2,9 +2,10 @@ import crypto from 'crypto';
 
 import { NextResponse } from 'next/server';
 
-import { CHECKOUT_CONFIG, capiReady } from '@/lib/checkout-config';
+import { CHECKOUT_CONFIG, capiReady, isTestMode } from '@/lib/checkout-config';
 import { ga4ServerReady, sendGa4Purchase } from '@/lib/ga4-server';
 import { sendCapiEvent } from '@/lib/meta-capi';
+import { unpackContext } from '@/lib/order-notes';
 import { pabblyReady, sendPabblyPurchase } from '@/lib/pabbly';
 
 /**
@@ -49,16 +50,25 @@ export async function POST(req: Request) {
   const payment = parsed.payload?.payment?.entity ?? {};
   const notes = payment.notes ?? {};
   const paymentId = String(payment.id ?? '');
+  const orderId = String(payment.order_id ?? '');
   const amountRupees = Number(payment.amount ?? 0) / 100;
 
   const valueRupees = amountRupees || CHECKOUT_CONFIG.amountRupees;
 
-  /* create-order packs the three utm_* values into one pipe-delimited note to
-     stay under Razorpay's 15-pair cap. Unpack in the same order it packed. */
-  const [utmSource = '', utmMedium = '', utmCampaign = ''] = String(
-    notes.utm ?? '',
-  ).split('|');
-  const country = String(notes.country ?? '') || 'in';
+  /* Everything the browser knew, written into the order at create time and
+     unpacked here. This is the ONLY route back to the buyer's own IP, user
+     agent, campaign and landing page: this request came from Razorpay, so its
+     own headers describe Razorpay. */
+  const ctx = unpackContext(notes);
+
+  const country = ctx.country || 'in';
+  /* Razorpay is the authority on email and phone — it holds what the buyer
+     actually paid with, which can differ from what they typed into our form. */
+  const email = String(payment.email ?? '') || '';
+  const phone = String(payment.contact ?? '') || '';
+  /* Origin only, for the same reason Meta gets origin only: the path names the
+     condition. Pabbly receives the canonical checkout url for reference. */
+  const eventSourceUrl = CHECKOUT_CONFIG.fallbackEventSourceUrl;
 
   /* GA4 purchase, server side. The browser copy on /thank-you only counts
      buyers who return to the page, which most UPI payers do not. Both are
@@ -66,7 +76,7 @@ export async function POST(req: Request) {
      the sale twice when someone does come back. */
   const ga4 = ga4ServerReady()
     ? await sendGa4Purchase({
-        clientId: String(notes.gaCid ?? ''),
+        clientId: ctx.gaCid,
         transactionId: paymentId,
         valueRupees,
         currency: CHECKOUT_CONFIG.currency,
@@ -81,25 +91,39 @@ export async function POST(req: Request) {
      whole webhook and double-fire Meta and GA4. */
   const pabbly = pabblyReady()
     ? await sendPabblyPurchase({
-        paymentId,
-        orderId: String(payment.order_id ?? ''),
-        /* Composed, not read from a `name` note: create-order stopped packing
-           one when the form split into first and last, so `notes.name` is
-           always empty and Pabbly was receiving a blank name column. */
-        name: [notes.firstName, notes.lastName].filter(Boolean).join(' '),
-        firstName: String(notes.firstName ?? ''),
-        lastName: String(notes.lastName ?? ''),
-        email: String(payment.email ?? notes.email ?? ''),
-        phone: String(payment.contact ?? notes.phone ?? ''),
-        city: String(notes.city ?? ''),
-        country,
-        occupation: String(notes.occupation ?? ''),
+        leadId: String(notes.lead_id ?? ''),
+        createdAt: ctx.createdAt,
+        firstName: ctx.firstName,
+        lastName: ctx.lastName,
+        email,
+        phone,
+        city: ctx.city,
+        countryCode: country,
+        fbc: ctx.fbc,
+        fbp: ctx.fbp,
+        clientIp: ctx.clientIp,
+        clientUserAgent: ctx.clientUserAgent,
+        externalId: ctx.externalId,
+        eventSourceUrl: `${eventSourceUrl}/checkout`,
         amountRupees: valueRupees,
+        isTest: isTestMode(),
+        /* The same id sent to Meta as the Purchase event_id, so a conversion
+           can be traced from the sheet back to a specific row in Events
+           Manager, or replayed against it. */
+        purchaseEventId: paymentId,
+        utmSource: ctx.utmSource,
+        utmMedium: ctx.utmMedium,
+        utmCampaign: ctx.utmCampaign,
+        utmContent: ctx.utmContent,
+        utmTerm: ctx.utmTerm,
+        fbclid: ctx.fbclid,
+        referrer: ctx.referrer,
+        landingUrl: ctx.landingUrl,
+        paymentId,
+        orderId,
         currency: CHECKOUT_CONFIG.currency,
         product: CHECKOUT_CONFIG.contentName,
-        utmSource,
-        utmMedium,
-        utmCampaign,
+        occupation: ctx.occupation,
       })
     : { ok: false, status: 0 };
 
@@ -120,26 +144,31 @@ export async function POST(req: Request) {
     accessToken: CHECKOUT_CONFIG.meta.accessToken,
     eventName: 'Purchase',
     eventId: paymentId,
-    eventSourceUrl:
-      String(notes.esu ?? '') || CHECKOUT_CONFIG.fallbackEventSourceUrl,
+    eventSourceUrl,
     user: {
-      email: payment.email || notes.email || undefined,
-      phone: payment.contact || notes.phone || undefined,
-      firstName: notes.firstName || undefined,
-      lastName: notes.lastName || undefined,
+      email: email || undefined,
+      phone: phone || undefined,
+      firstName: ctx.firstName || undefined,
+      lastName: ctx.lastName || undefined,
       country,
-      city: notes.city || undefined,
-      externalId: notes.externalId || undefined,
-      fbc: notes.fbc || undefined,
-      fbp: notes.fbp || undefined,
+      city: ctx.city || undefined,
+      externalId: ctx.externalId || undefined,
+      fbc: ctx.fbc || undefined,
+      fbp: ctx.fbp || undefined,
+      /* Captured from the BUYER's request at create-order and carried here.
+         Previously absent on Purchase, which is the one event where a missing
+         device match costs the most: these two are worth roughly a point of
+         EMQ on their own. */
+      clientIp: ctx.clientIp || undefined,
+      clientUserAgent: ctx.clientUserAgent || undefined,
     },
     valueRupees,
     currency: CHECKOUT_CONFIG.currency,
-    contentName: CHECKOUT_CONFIG.contentName,
-    utm: { source: utmSource, medium: utmMedium, campaign: utmCampaign },
-    /* Not PII and not hashable, so it rides in custom_data rather than
-       user_data: it is a segment, not an identifier. */
-    ...(notes.occupation && { custom: { occupation: String(notes.occupation) } }),
+    /* order_id is the only descriptive field Meta receives. Occupation, the
+       product name and the UTMs are deliberately NOT sent: custom_data is
+       unhashed and is read during dataset classification. They go to Pabbly
+       and GA4 instead, which is where they were actually useful. */
+    orderId: orderId || undefined,
     testEventCode: CHECKOUT_CONFIG.meta.testEventCode || undefined,
   });
 
