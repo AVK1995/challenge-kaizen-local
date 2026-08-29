@@ -83,7 +83,10 @@ export async function POST(req: Request) {
     ? await sendPabblyPurchase({
         paymentId,
         orderId: String(payment.order_id ?? ''),
-        name: String(notes.name ?? ''),
+        /* Composed, not read from a `name` note: create-order stopped packing
+           one when the form split into first and last, so `notes.name` is
+           always empty and Pabbly was receiving a blank name column. */
+        name: [notes.firstName, notes.lastName].filter(Boolean).join(' '),
         firstName: String(notes.firstName ?? ''),
         lastName: String(notes.lastName ?? ''),
         email: String(payment.email ?? notes.email ?? ''),

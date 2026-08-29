@@ -39,6 +39,7 @@ import {
   START_DATE,
   WOMEN_SUPPORTED,
 } from './offer';
+import { asset } from './asset-version';
 import { Art, C } from './shared';
 
 /* ══ 0 · Announcement strip (R10) ══════════════════════════════════════════
@@ -285,7 +286,7 @@ export function Hero() {
                   above the eyebrow, reserved at its final ratio so the card
                   does not change height when a still or a clip lands. */}
               <Art
-                src="/images/system-stack.png"
+                src={asset('/images/system-stack.png')}
                 alt="Everything included: Prerna, the live Zoom sessions, the Kaizen community, the four guides, the five day cards and the guided audio, for ₹497"
                 ratio="3 / 2"
                 sizes="(min-width: 1024px) 420px, 100vw"

@@ -59,7 +59,7 @@ const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating per
    So: fall back on any falsy value rather than only on null, add the protocol
    if someone pastes a bare domain, and if it still will not parse, use the
    literal rather than throwing. */
-const FALLBACK_ORIGIN = 'https://challenge.kaizengoa.com';
+const FALLBACK_ORIGIN = 'https://challenge.kaizenwellness.app';
 
 function resolveSiteUrl(): string {
   const raw = (process.env.NEXT_PUBLIC_SITE_URL || '').trim();

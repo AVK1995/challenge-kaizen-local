@@ -103,7 +103,29 @@ export async function POST(req: Request) {
 
     const order = await res.json();
     if (!res.ok || !order?.id) {
-      console.error('[create-order] razorpay rejected', order);
+      /* Flattened onto ONE line on purpose. Logging the raw object makes the
+         host's log viewer pretty-print it across many lines and truncate the
+         tail, which is exactly where Razorpay puts `description` and `field`,
+         the only two values that say what was actually wrong. */
+      const err = order?.error ?? {};
+      /* A 401 is never about the payload, so print the SHAPE of the credentials
+         beside it. The key id is publishable by design (it is handed to the
+         browser below), and a length plus a trimmed-flag says nothing about the
+         secret's value while catching all four causes of a bad pair: mixed
+         test/live modes, a stray space or quote pasted into the host's env UI,
+         a regenerated secret, and the two values entered the wrong way round. */
+      if (res.status === 401) {
+        console.error(
+          `[create-order] auth shape keyIdPrefix=${keyId.slice(0, 9)} ` +
+            `keyIdLen=${keyId.length} (expect 23) secretLen=${keySecret.length} (expect 24) ` +
+            `keyIdClean=${keyId === keyId.trim()} secretClean=${keySecret === keySecret.trim()} ` +
+            `secretLooksLikeKeyId=${keySecret.startsWith('rzp_')}`,
+        );
+      }
+      console.error(
+        `[create-order] razorpay rejected http=${res.status} code=${err.code ?? '?'} ` +
+          `step=${err.step ?? '?'} field=${err.field ?? '-'} desc=${err.description ?? JSON.stringify(order)}`,
+      );
       return NextResponse.json({ ok: false, reason: 'gateway' }, { status: 502 });
     }
 

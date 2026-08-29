@@ -278,7 +278,7 @@ export function MediaPlaceholder({
         border: `1px dashed ${C.lineStrong}`,
       }}
       role="img"
-      aria-label={`${label} — image to be supplied`}
+      aria-label={`${label}, image to be supplied`}
     >
       <ImageSquare weight="duotone" className="h-6 w-6" style={{ color: C.goldInk }} />
       <span

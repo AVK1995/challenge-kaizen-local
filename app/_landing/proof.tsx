@@ -30,11 +30,14 @@ import { C, SectionHeading } from './shared';
 type Testimonial = { label: string; vimeoId?: string; meta?: string };
 type Screenshot = { label: string; src?: string; alt?: string };
 
-/* Eleven clips, all shot vertical (9:16) and 31 to 81 seconds.
+/* Fifteen clips, all shot vertical (9:16) and 31 to 81 seconds.
    `meta` is the speaker's name and is only set where the source video is
-   actually titled with one. Three of the eleven are titled generically in the
+   actually titled with one. Three of the fifteen are titled generically in the
    library ("Mixed Testimonials", "Express Wellness"), and those run without a
-   name rather than with an invented one. */
+   name rather than with an invented one.
+
+   Named speakers lead and the unnamed three sit last: a face with a name
+   attached to it is the stronger proof, and the rail is read from its start. */
 const TESTIMONIALS: Testimonial[] = [
   { label: 'Julie', vimeoId: '1221356514', meta: 'Julie' },
   { label: 'Nicole Bhatia', vimeoId: '1221356653', meta: 'Nicole Bhatia' },
@@ -44,6 +47,10 @@ const TESTIMONIALS: Testimonial[] = [
   { label: 'Neetu', vimeoId: '1221356642', meta: 'Neetu' },
   { label: 'Richa Wahi', vimeoId: '1221356657', meta: 'Richa Wahi' },
   { label: 'Dielle', vimeoId: '1221356513', meta: 'Dielle' },
+  { label: 'Anita', vimeoId: '1222299328', meta: 'Anita' },
+  { label: 'Shilpa Kerekar', vimeoId: '1222299331', meta: 'Shilpa Kerekar' },
+  { label: 'Praryna', vimeoId: '1222299329', meta: 'Praryna' },
+  { label: 'Khushi Dawda', vimeoId: '1222299330', meta: 'Khushi Dawda' },
   { label: 'Kaizen member', vimeoId: '1221356641' },
   { label: 'Kaizen member', vimeoId: '1221356609' },
   { label: 'Kaizen member', vimeoId: '1221356516' },
@@ -86,14 +93,14 @@ function PendingFrame({ label, note }: { label: string; note: string }) {
 /* ══════════════════════════════════════════════════════════════════════════
  *  The testimonial rail: one row, scrolling on its own.
  *
- *  Posters, not players. Eleven embeds in a duplicated marquee track would be
- *  TWENTY-TWO Vimeo player documents fighting for the main thread, on a section
+ *  Posters, not players. Fifteen embeds in a duplicated marquee track would be
+ *  THIRTY Vimeo player documents fighting for the main thread, on a section
  *  most readers scroll past. So the rail carries still frames, and the clicked
  *  card, and only that one, becomes a real player.
  *
  *  The track is rendered twice for a seamless loop, and the animation travels
  *  -50%, which is exactly one copy. The second copy is aria-hidden so a screen
- *  reader hears eleven testimonials, not twenty-two.
+ *  reader hears fifteen testimonials, not thirty.
  *
  *  `playingKey` carries the COPY INDEX as well as the video id. Both copies of
  *  a card are clickable (the duplicate is on screen half the time, so making it
@@ -307,7 +314,7 @@ export default function Proof() {
       </SectionHeading>
 
       {/* ── 7a · the rail ────────────────────────────────────────────────
-          Eleven clips is too many to grid: four rows of portrait cards would
+          Fifteen clips is too many to grid: five rows of portrait cards would
           push the wall below it off the page entirely. One self-scrolling row
           shows the VOLUME of proof at a glance and costs a single screen.
           Poster in a mat with an inner hairline ring, so each card reads as an

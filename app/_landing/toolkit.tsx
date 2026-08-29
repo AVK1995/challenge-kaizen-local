@@ -33,12 +33,13 @@ import {
 } from '@phosphor-icons/react/dist/ssr';
 
 import { legoBrick, legoDelay } from './lego-style';
+import { asset } from './asset-version';
 import { Art, C, MediaPlaceholder, SectionEyebrow } from './shared';
 
 const LEAD = {
   n: '01',
   icon: Broadcast,
-  cover: '/images/challenge-days.png',
+  cover: asset('/images/challenge-days.png'),
   title: '5-Day Live (Peri)Menopause Reset Challenge',
   value: '(₹2,500 Value)',
   body: 'Experience five expert-led live sessions combining movement and mindfulness to help ease common symptoms and feel more in control of your body.',
@@ -53,7 +54,7 @@ const LEAD = {
 const BONUSES = [
   {
     n: '02',
-    cover: '/images/guide-nutrition.png',
+    cover: asset('/images/guide-nutrition.png'),
     title: 'Kaizen Menopause Nutrition Playbook',
     icon: BowlFood,
     value: '(₹997 Value)',
@@ -61,7 +62,7 @@ const BONUSES = [
   },
   {
     n: '03',
-    cover: '/images/guide-mobility.png',
+    cover: asset('/images/guide-mobility.png'),
     title: 'Kaizen Morning Mobility Reset',
     icon: PersonSimpleTaiChi,
     value: '(₹497 Value)',
@@ -69,7 +70,7 @@ const BONUSES = [
   },
   {
     n: '04',
-    cover: '/images/guide-sleep.png',
+    cover: asset('/images/guide-sleep.png'),
     title: 'Pranayam for Better Sleep',
     icon: Wind,
     value: '(₹497 Value)',
@@ -77,7 +78,7 @@ const BONUSES = [
   },
   {
     n: '05',
-    cover: '/images/guide-nervous-system.png',
+    cover: asset('/images/guide-nervous-system.png'),
     title: 'Nervous System Reset with Prerna',
     icon: Headphones,
     value: '(₹497 Value)',

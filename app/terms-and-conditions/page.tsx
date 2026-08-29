@@ -21,8 +21,8 @@ export default function TermsPage() {
     >
       <h2>1. Who we are</h2>
       <p>
-        The programme is provided by {LEGAL.entity}, {LEGAL.address}, trading as{' '}
-        {LEGAL.brand}.
+        The programme is provided by {LEGAL.entity}, sole proprietor, trading as{' '}
+        {LEGAL.tradeName}, {LEGAL.address}.
       </p>
 
       <h2>2. What you are buying</h2>
@@ -109,7 +109,11 @@ export default function TermsPage() {
 
       <h2>11. Contact</h2>
       <p>
-        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.
+        {LEGAL.entity}, trading as {LEGAL.tradeName}, {LEGAL.address}.
+        <br />
+        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>
+        {' · '}
+        <a href={`tel:${LEGAL.phoneHref}`}>{LEGAL.phone}</a>
       </p>
     </LegalPageLayout>
   );

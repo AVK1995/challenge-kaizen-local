@@ -135,7 +135,7 @@ function ThankYou() {
             <strong style={{ color: C.ink }}>
               5-Day (Peri)Menopause Reset Challenge.
             </strong>{' '}
-            Please read this page carefully — your access depends on the next
+            Please read this page carefully, your access depends on the next
             step.
           </p>
 

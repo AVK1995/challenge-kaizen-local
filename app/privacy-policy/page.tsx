@@ -107,8 +107,11 @@ export default function PrivacyPolicyPage() {
 
       <h2>9. Contact</h2>
       <p>
-        {LEGAL.entity}, {LEGAL.address}.{' '}
-        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.
+        {LEGAL.entity}, trading as {LEGAL.tradeName}, {LEGAL.address}.
+        <br />
+        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>
+        {' · '}
+        <a href={`tel:${LEGAL.phoneHref}`}>{LEGAL.phone}</a>
       </p>
     </LegalPageLayout>
   );

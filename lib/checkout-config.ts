@@ -20,7 +20,7 @@ export const CHECKOUT_CONFIG = {
      event_source_url is silently worthless to Meta. */
   fallbackEventSourceUrl:
     (process.env.NEXT_PUBLIC_SITE_URL || '').trim() ||
-    'https://challenge.kaizengoa.com',
+    'https://challenge.kaizenwellness.app',
   meta: {
     pixelId: process.env.META_PIXEL_ID ?? '',
     accessToken: process.env.META_CAPI_ACCESS_TOKEN ?? '',

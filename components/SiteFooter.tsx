@@ -6,8 +6,8 @@ import { C } from '@/app/_landing/shared';
 /**
  * One footer for every page: landing, checkout and thank-you.
  *
- * Ankita runs two different footers — a dark one on the landing page and a
- * light ruled strip on the checkout — which means the disclaimer only appears
+ * Ankita runs two different footers, a dark one on the landing page and a
+ * light ruled strip on the checkout, which means the disclaimer only appears
  * on some pages. Here it is a single dark component so the legal text and the
  * policy links are present wherever someone lands, including on a checkout
  * they reached from an ad.
@@ -51,8 +51,30 @@ export default function SiteFooter({ children }: { children?: React.ReactNode })
           trademarks of Meta Platforms, Inc.
         </p>
 
+        {/* Operator identity and a reachable contact, on EVERY page. Razorpay's
+            merchant review looks for the registered name, a postal address and
+            a working phone plus email on the site itself, not only buried in a
+            policy page, and a reviewer who cannot find them fails the account
+            rather than writing to ask. */}
         <p
-          className="mt-6 text-[12px] sm:text-[13px]"
+          className="mx-auto mt-6 max-w-3xl text-[12px] leading-relaxed sm:text-[12.5px]"
+          style={{ color: 'rgba(253,249,241,0.55)' }}
+        >
+          {LEGAL.entity}, trading as {LEGAL.tradeName}
+          <br />
+          {LEGAL.address}
+          <br />
+          <a href={`mailto:${LEGAL.email}`} className="hover:underline">
+            {LEGAL.email}
+          </a>
+          {' · '}
+          <a href={`tel:${LEGAL.phoneHref}`} className="hover:underline">
+            {LEGAL.phone}
+          </a>
+        </p>
+
+        <p
+          className="mt-4 text-[12px] sm:text-[13px]"
           style={{ color: 'rgba(253,249,241,0.55)' }}
         >
           © {new Date().getFullYear()} {LEGAL.brand}. All rights reserved.

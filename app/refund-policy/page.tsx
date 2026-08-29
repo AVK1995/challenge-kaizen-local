@@ -38,7 +38,7 @@ export default function RefundPolicyPage() {
           address you used at checkout.
         </li>
         <li>
-          Use the subject line <strong>&ldquo;Refund Request — 5-Day Reset&rdquo;</strong>.
+          Use the subject line <strong>&ldquo;Refund Request: 5-Day Reset&rdquo;</strong>.
         </li>
         <li>
           Include your full name and the date of purchase. A line on what did not
@@ -86,8 +86,12 @@ export default function RefundPolicyPage() {
 
       <h2>8. Contact</h2>
       <p>
-        {LEGAL.entity}, {LEGAL.address}. Questions about this policy:{' '}
-        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.
+        {LEGAL.entity}, trading as {LEGAL.tradeName}, {LEGAL.address}.
+        <br />
+        Questions about this policy:{' '}
+        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>
+        {' · '}
+        <a href={`tel:${LEGAL.phoneHref}`}>{LEGAL.phone}</a>.
       </p>
     </LegalPageLayout>
   );

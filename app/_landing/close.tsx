@@ -33,6 +33,7 @@ import Link from 'next/link';
 
 import SiteFooter from '@/components/SiteFooter';
 
+import { asset } from './asset-version';
 import BrandMark from './brand-mark';
 import { legoBrick, legoDelay } from './lego-style';
 import { CHECKOUT_HREF, CTA_LABEL, CTA_NOTE, PRICE, SESSION_TIMES, START_DATE } from './offer';
@@ -67,8 +68,8 @@ import {
    biased UPWARDS out of taller frames so the faces, and the award plaque,
    survive the crop. */
 const PHOTOS: { lead: string | null; small: [string | null, string | null] } = {
-  lead: '/images/prerna-portrait.jpg',
-  small: ['/images/prerna-session.jpg', '/images/prerna-award.jpg'],
+  lead: asset('/images/prerna-portrait.jpg'),
+  small: [asset('/images/prerna-session.jpg'), asset('/images/prerna-award.jpg')],
 };
 
 /* One slot. Renders the real image when a path exists and a reserved box at the
