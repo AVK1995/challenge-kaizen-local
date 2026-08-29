@@ -12,6 +12,11 @@ import { sendCapiEvent, sha256Hex, type StandardEvent } from '@/lib/meta-capi';
  * allow-list below is what keeps that from becoming a hole: only Meta standard
  * names are accepted, and Purchase is explicitly NOT among them. Purchase is
  * only ever sent by the Razorpay webhook, where the payment is proven.
+ *
+ * The client IP and user agent are read from THIS request's headers, which is
+ * the correct source: this is a fetch from the buyer's own browser. The
+ * webhook's equivalent values have to travel via the order notes, because that
+ * request comes from Razorpay.
  */
 const ALLOWED: StandardEvent[] = ['ViewContent', 'AddToCart', 'InitiateCheckout'];
 
@@ -75,8 +80,11 @@ export async function POST(req: Request) {
     },
     valueRupees: CHECKOUT_CONFIG.amountRupees,
     currency: CHECKOUT_CONFIG.currency,
-    contentName: CHECKOUT_CONFIG.contentName,
-    utm: (body.utm as Record<string, string>) ?? undefined,
+    /* No content_name, no UTMs, no order id. These three events happen before
+       an order exists, so custom_data carries value and currency alone — see
+       the classification note at the top of lib/meta-capi.ts. The UTMs the
+       browser still sends in this body are read for nothing here on purpose;
+       they reach the sale through Razorpay's notes and Pabbly instead. */
     testEventCode: CHECKOUT_CONFIG.meta.testEventCode || undefined,
   });
 

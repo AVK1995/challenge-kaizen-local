@@ -10,6 +10,8 @@
  * exactly as Meta's own pixel would.
  */
 
+import { readAttribution } from '@/lib/attribution';
+
 const EXTERNAL_ID_KEY = 'kz_external_id';
 
 export function getOrCreateExternalId(): string {
@@ -43,16 +45,24 @@ export function captureFbclid(): void {
   document.cookie = `_fbc=${value}; path=/; max-age=${60 * 60 * 24 * 90}; SameSite=Lax`;
 }
 
+/**
+ * The campaign context, read from storage rather than from the current url.
+ *
+ * It is captured on first landing by lib/attribution.ts. Reading
+ * `window.location.search` here instead — which is what this used to do —
+ * returns nothing on /checkout, because the buyer arrived by clicking a link
+ * and the query string did not come with them. Every paid sale was therefore
+ * written to the order with blank UTMs.
+ */
 export function readUtm() {
-  if (typeof window === 'undefined') return {};
-  const q = new URLSearchParams(window.location.search);
-  const pick = (k: string) => q.get(k) || undefined;
+  const a = readAttribution();
+  const pick = (v: string) => v || undefined;
   return {
-    source: pick('utm_source'),
-    medium: pick('utm_medium'),
-    campaign: pick('utm_campaign'),
-    content: pick('utm_content'),
-    term: pick('utm_term'),
+    source: pick(a.utmSource),
+    medium: pick(a.utmMedium),
+    campaign: pick(a.utmCampaign),
+    content: pick(a.utmContent),
+    term: pick(a.utmTerm),
   };
 }
 
@@ -70,8 +80,15 @@ export function readGaClientId(): string {
   return parts.length >= 4 ? `${parts[2]}.${parts[3]}` : '';
 }
 
-/** Everything a server event route needs from the browser, in one object. */
+/**
+ * Everything a server route needs from the browser, in one object.
+ *
+ * Note what is NOT here: the client IP and the user agent. Both are read
+ * server-side from the request headers, because a browser cannot know its own
+ * IP and a user agent sent up in a body is forgeable. See lib/request-signals.
+ */
 export function collectSignals() {
+  const a = readAttribution();
   return {
     externalId: getOrCreateExternalId(),
     gaClientId: readGaClientId(),
@@ -79,5 +96,8 @@ export function collectSignals() {
     fbp: readCookie('_fbp') || undefined,
     eventSourceUrl: typeof window !== 'undefined' ? window.location.href : '',
     utm: readUtm(),
+    fbclid: a.fbclid,
+    referrer: a.referrer,
+    landingUrl: a.landingUrl,
   };
 }

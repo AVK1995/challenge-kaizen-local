@@ -37,3 +37,20 @@ export const CHECKOUT_CONFIG = {
  *  quietly rather than posting to Meta with an empty pixel id. */
 export const capiReady = () =>
   Boolean(CHECKOUT_CONFIG.meta.pixelId && CHECKOUT_CONFIG.meta.accessToken);
+
+/**
+ * Whether this deployment is transacting in test mode, derived rather than
+ * declared.
+ *
+ * Razorpay stamps its own environment into the key id — `rzp_test_` versus
+ * `rzp_live_` — so this cannot drift out of sync the way a separate
+ * IS_TEST env var would when someone swaps the keys and forgets the flag. A
+ * Meta test event code is also treated as test, because events sent with one
+ * do not count toward optimisation and the sale they describe is not real.
+ *
+ * It rides to Pabbly as `is_test` so a staging purchase can be routed away
+ * from the live WhatsApp invite instead of onboarding a fictional buyer.
+ */
+export const isTestMode = () =>
+  CHECKOUT_CONFIG.razorpay.keyId.startsWith('rzp_test_') ||
+  Boolean(CHECKOUT_CONFIG.meta.testEventCode);

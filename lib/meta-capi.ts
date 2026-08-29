@@ -8,6 +8,34 @@ import crypto from 'crypto';
  * Purchase; that is dropped here. A custom event duplicating a standard one
  * adds no information and competes with it for Aggregated Event Measurement
  * priority on iOS, where standard names rank first.
+ *
+ * ── Health & wellness classification hygiene ──────────────────────────────
+ * Meta classifies a dataset into its restricted "Health and wellness
+ * condition" category by reading six surfaces, and a restriction, once
+ * applied, binds at the root domain and is not cleanly reversible. This offer
+ * is menopause coaching, so the intrinsic nature of the product is a signal we
+ * cannot remove. Every signal we CAN remove is removed here, and that means
+ * the two surfaces this file owns:
+ *
+ *   `custom_data` — value, currency and order_id ONLY. No `content_name`, no
+ *   product string, no category, no UTM, no fbclid. custom_data is NOT hashed
+ *   and IS read: "5-Day (Peri)Menopause Reset Challenge" arriving on every
+ *   event is a plain-text declaration of the condition, and `utm_campaign`
+ *   values are written by media buyers and drift toward symptom language with
+ *   nobody reviewing them.
+ *
+ *   `event_source_url` — reduced to the ORIGIN. A path like
+ *   /perimenopause-reset carries the same declaration in the same crawl.
+ *
+ * The standard event NAMES are deliberately kept. Coded custom events
+ * (`evt_a`) are the belt-and-braces variant of this posture, but they forfeit
+ * Aggregated Event Measurement priority, the built-in Purchase optimisation
+ * and every standard-event prior in the ad account. The payload and the URL
+ * are where the classification risk actually lives; the names are where the
+ * performance lives. This keeps the performance and removes the risk.
+ *
+ * `user_data` is untouched and stays maximal: it is all SHA-256 hashed, it is
+ * what EMQ is scored on, and it declares nothing about the offer.
  */
 
 export type Utm = {
@@ -17,6 +45,22 @@ export type Utm = {
   content?: string;
   term?: string;
 };
+
+/**
+ * Strip an event_source_url to its origin.
+ *
+ * Applied server-side rather than trusted from the caller, because the caller
+ * is a browser posting `window.location.href` and that is precisely the value
+ * with the health-y path and the fbclid on it. Falls back to the raw string
+ * only if it will not parse — a malformed url is not a leak.
+ */
+export function originOnly(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url;
+  }
+}
 
 /** Meta's standard events. Nothing outside this union is sendable. */
 export type StandardEvent =
@@ -101,13 +145,10 @@ export async function sendCapiEvent(params: {
   user: UserSignals;
   valueRupees: number;
   currency: string;
-  contentName?: string;
-  /* Arbitrary custom_data properties. Meta has no standard user_data field for
-     something like occupation, but custom_data accepts extra keys, and they can
-     be used to build audiences and read breakdowns. Never put PII here:
-     custom_data is NOT hashed. */
-  custom?: Record<string, string>;
-  utm?: Utm;
+  /* The ONLY descriptive field allowed through. It is an opaque Razorpay id,
+     it says nothing about what was bought, and Meta uses it for its own
+     deduplication of a purchase across sources. */
+  orderId?: string;
   testEventCode?: string;
 }): Promise<{ ok: boolean; status: number; body: unknown }> {
   const body = {
@@ -116,17 +157,16 @@ export async function sendCapiEvent(params: {
         event_name: params.eventName,
         event_time: Math.floor(Date.now() / 1000),
         event_id: params.eventId,
-        event_source_url: params.eventSourceUrl,
+        event_source_url: originOnly(params.eventSourceUrl),
         action_source: 'website',
         user_data: buildUserData(params.user),
+        /* Nothing may be added here. See the classification note at the top of
+           this file: every key below is either a number or an opaque id, and
+           that is the property that keeps this dataset unclassified. */
         custom_data: {
           currency: params.currency,
           value: params.valueRupees,
-          ...(params.contentName && { content_name: params.contentName }),
-          ...(params.utm?.source && { utm_source: params.utm.source }),
-          ...(params.utm?.medium && { utm_medium: params.utm.medium }),
-          ...(params.utm?.campaign && { utm_campaign: params.utm.campaign }),
-          ...(params.custom ?? {}),
+          ...(params.orderId && { order_id: params.orderId }),
         },
       },
     ],

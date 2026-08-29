@@ -1,6 +1,10 @@
+import crypto from 'crypto';
+
 import { NextResponse } from 'next/server';
 
-import { CHECKOUT_CONFIG } from '@/lib/checkout-config';
+import { CHECKOUT_CONFIG, isTestMode } from '@/lib/checkout-config';
+import { packContext } from '@/lib/order-notes';
+import { readClientIp, readClientUserAgent } from '@/lib/request-signals';
 
 /**
  * Creates the Razorpay order the browser then pays.
@@ -15,8 +19,15 @@ import { CHECKOUT_CONFIG } from '@/lib/checkout-config';
  * not written now are gone by then: the buyer may complete inside a bank app
  * and never return to a page that could report them.
  *
- * Razorpay allows 15 note keys at 256 chars each, so related fields are packed
- * into JSON blobs rather than spread across keys.
+ * This is ALSO the last request the buyer's own browser makes before the
+ * payment sheet takes over, which makes it the only honest place to read their
+ * IP and user agent. The webhook that fires Purchase is a request from
+ * Razorpay, so reading those headers there would record Razorpay's server as
+ * the buyer's device. See lib/request-signals.ts.
+ *
+ * Razorpay allows 15 note keys at 256 chars each and REJECTS the order if
+ * either limit is passed, so the machine-readable half of the record is packed
+ * into chunked keys by lib/order-notes.ts rather than spread one field per key.
  */
 
 const truncate = (v: unknown, max = 256) => {
@@ -55,36 +66,57 @@ export async function POST(req: Request) {
 
   const utm = (body.utm ?? {}) as Record<string, string | undefined>;
 
-  /* RAZORPAY CAPS notes AT 15 KEY-VALUE PAIRS. This block is at 14, so there is
-     exactly ONE slot spare: adding two more fields fails the order outright,
-     it does not just drop the note.
+  /* Identity and timestamp for the fulfilment record. Generated HERE, not in
+     the webhook: `created_at` must mean "when this person submitted their
+     details", and a webhook stamp would instead record when Razorpay got round
+     to calling us, which for a UPI payment can be minutes later. */
+  const leadId = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
 
-     Two things were folded to make room. `name` is gone, because firstName and
-     lastName now arrive as separate form fields and a joined copy is
-     redundant. The three utm_* keys are packed into one pipe-delimited `utm`,
-     which the webhook splits back apart in the same order. */
+  /* Read from headers, never from the request body: the browser cannot know
+     its own IP, and a user agent sent up in JSON is trivially forged. */
+  const clientIp = readClientIp(req);
+  const clientUserAgent = readClientUserAgent(req);
+
+  /* FIVE READABLE KEYS + TEN CHUNK KEYS = the 15 Razorpay allows, exactly.
+     Nothing further can be added at this level; new fields go into the packed
+     context instead, which has headroom. */
   const notes: Record<string, string> = {
     kind: 'kaizen_5day_reset',
-    firstName: truncate(firstName),
-    lastName: truncate(lastName),
+    lead_id: leadId,
+    name: truncate(`${firstName} ${lastName}`.trim()),
     email: truncate(email),
     phone: truncate(phone),
-    city: truncate(city),
-    country: truncate(country),
-    occupation: truncate(occupation),
-    externalId: truncate(body.externalId, 64),
-    fbc: truncate(body.fbc),
-    fbp: truncate(body.fbp),
-    gaCid: truncate(body.gaClientId, 64),
-    /* Canonical, no query string: real URLs blow past 256 chars once utm and
-       fbclid params are on them, and event_source_url is metadata for Meta
-       rather than a matching signal, so trimming it costs no match quality. */
-    esu: `${CHECKOUT_CONFIG.fallbackEventSourceUrl}/checkout`,
-    utm: truncate(
-      [utm.source ?? '', utm.medium ?? '', utm.campaign ?? ''].join('|'),
-      250,
-    ),
+    ...packContext({
+      createdAt,
+      firstName,
+      lastName,
+      city,
+      country,
+      occupation,
+      externalId: truncate(body.externalId, 64),
+      fbc: truncate(body.fbc),
+      fbp: truncate(body.fbp),
+      gaCid: truncate(body.gaClientId, 64),
+      clientIp,
+      clientUserAgent,
+      utmSource: truncate(utm.source, 100),
+      utmMedium: truncate(utm.medium, 100),
+      utmCampaign: truncate(utm.campaign, 100),
+      utmContent: truncate(utm.content, 100),
+      utmTerm: truncate(utm.term, 100),
+      fbclid: truncate(body.fbclid, 200),
+      referrer: truncate(body.referrer, 200),
+      landingUrl: truncate(body.landingUrl, 300),
+    }),
   };
+
+  /* A rejected order is an unpaid buyer, so the cap is asserted rather than
+     assumed. packContext cannot exceed ten keys by construction; this catches
+     the case where someone adds a sixth readable key above. */
+  if (Object.keys(notes).length > 15) {
+    console.error('[create-order] notes over Razorpay 15-key cap', Object.keys(notes).length);
+  }
 
   try {
     const res = await fetch('https://api.razorpay.com/v1/orders', {
@@ -131,6 +163,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
+      leadId,
+      isTest: isTestMode(),
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,

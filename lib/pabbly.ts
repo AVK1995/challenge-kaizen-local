@@ -14,27 +14,59 @@
  * retry would re-fire Meta and GA4 and double-count the sale. So this reports
  * its own success and swallows its own errors: the caller logs the result and
  * still returns 200.
+ *
+ * ── Why this payload carries the Meta match keys too ──────────────────────
+ * Pabbly is not only fulfilment; it is the ONLY place the full, unhashed
+ * record of a sale exists. Meta receives hashes and nothing descriptive, GA4
+ * receives no PII at all, and Razorpay holds only what it needs to charge a
+ * card. So `fbc`, `fbp`, `client_ip_address`, `client_user_agent`,
+ * `external_id` and `purchase_event_id` ride along here as well — they are
+ * what makes it possible to rebuild, replay or reconcile a Meta event later
+ * from the sheet, without which a mis-sent conversion is unrecoverable.
  */
 export const pabblyReady = () => Boolean(process.env.PABBLY_WEBHOOK_URL);
 
 export type PabblyPurchase = {
-  paymentId: string;
-  orderId?: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  firstName?: string;
-  lastName?: string;
-  city?: string;
-  country?: string;
-  occupation?: string;
+  leadId: string;
+  createdAt: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  city: string;
+  countryCode: string;
+  fbc: string;
+  fbp: string;
+  clientIp: string;
+  clientUserAgent: string;
+  externalId: string;
+  eventSourceUrl: string;
   amountRupees: number;
+  isTest: boolean;
+  purchaseEventId: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmContent: string;
+  utmTerm: string;
+  fbclid: string;
+  referrer: string;
+  landingUrl: string;
+  /* Beyond the agreed column set, kept because existing Pabbly steps already
+     map them and removing a key silently blanks a column downstream. */
+  paymentId: string;
+  orderId: string;
   currency: string;
   product: string;
-  utmSource?: string;
-  utmMedium?: string;
-  utmCampaign?: string;
+  occupation: string;
 };
+
+/* Every key is emitted on every call, empty string where unknown. Pabbly
+   builds its field mapper from the FIRST payload it sees, so a key that is
+   merely absent on the first test call cannot be mapped afterwards without
+   re-running the trigger — an omitted key is far more expensive here than an
+   empty one. */
+const s = (v: unknown) => (v == null ? '' : String(v));
 
 export async function sendPabblyPurchase(
   p: PabblyPurchase,
@@ -49,23 +81,42 @@ export async function sendPabblyPurchase(
       /* Flat keys, no nesting: Pabbly maps fields one level deep, and a nested
          object arrives as an unusable blob in the step mapper. */
       body: JSON.stringify({
-        event: 'purchase',
-        payment_id: p.paymentId,
-        order_id: p.orderId ?? '',
-        name: p.name ?? '',
-        first_name: p.firstName ?? '',
-        last_name: p.lastName ?? '',
-        email: p.email ?? '',
-        phone: p.phone ?? '',
-        city: p.city ?? '',
-        country: p.country ?? '',
-        occupation: p.occupation ?? '',
+        lead_id: s(p.leadId),
+        created_at: s(p.createdAt),
+        first_name: s(p.firstName),
+        last_name: s(p.lastName),
+        email: s(p.email),
+        phone: s(p.phone),
+        city: s(p.city),
+        country_code: s(p.countryCode),
+        fbc: s(p.fbc),
+        fbp: s(p.fbp),
+        client_ip_address: s(p.clientIp),
+        client_user_agent: s(p.clientUserAgent),
+        external_id: s(p.externalId),
+        event_source_url: s(p.eventSourceUrl),
         amount: p.amountRupees,
-        currency: p.currency,
-        product: p.product,
-        utm_source: p.utmSource ?? '',
-        utm_medium: p.utmMedium ?? '',
-        utm_campaign: p.utmCampaign ?? '',
+        /* Boolean, not the string "false": a Pabbly router condition on a
+           non-empty string treats "false" as true and would route live sales
+           down the test branch. */
+        is_test: Boolean(p.isTest),
+        purchase_event_id: s(p.purchaseEventId),
+        utm_source: s(p.utmSource),
+        utm_medium: s(p.utmMedium),
+        utm_campaign: s(p.utmCampaign),
+        utm_content: s(p.utmContent),
+        utm_term: s(p.utmTerm),
+        fbclid: s(p.fbclid),
+        referrer: s(p.referrer),
+        landing_url: s(p.landingUrl),
+
+        event: 'purchase',
+        payment_id: s(p.paymentId),
+        order_id: s(p.orderId),
+        name: `${s(p.firstName)} ${s(p.lastName)}`.trim(),
+        currency: s(p.currency),
+        product: s(p.product),
+        occupation: s(p.occupation),
       }),
     });
     return { ok: res.ok, status: res.status };
