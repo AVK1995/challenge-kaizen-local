@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
 
 import { CHECKOUT_CONFIG, capiReady } from '@/lib/checkout-config';
-import { sendCapiEvent, sha256Hex, type StandardEvent } from '@/lib/meta-capi';
+import {
+  sendCapiEvent,
+  sha256Hex,
+  type Occupation,
+  type SendableEvent,
+} from '@/lib/meta-capi';
 
 /**
- * One route for the three intent events: ViewContent, AddToCart and
- * InitiateCheckout.
+ * One route for the four pre-payment events: ViewContent, AddToCart,
+ * InitiateCheckout and QualifiedLead.
  *
  * Ankita uses a route per event. One route is fewer moving parts and the
  * payloads are identical apart from the name and the dedup key, but the
- * allow-list below is what keeps that from becoming a hole: only Meta standard
+ * allow-list below is what keeps that from becoming a hole: only reviewed
  * names are accepted, and Purchase is explicitly NOT among them. Purchase is
  * only ever sent by the Razorpay webhook, where the payment is proven.
  *
@@ -18,7 +23,18 @@ import { sendCapiEvent, sha256Hex, type StandardEvent } from '@/lib/meta-capi';
  * webhook's equivalent values have to travel via the order notes, because that
  * request comes from Razorpay.
  */
-const ALLOWED: StandardEvent[] = ['ViewContent', 'AddToCart', 'InitiateCheckout'];
+const ALLOWED: SendableEvent[] = [
+  'ViewContent',
+  'AddToCart',
+  'InitiateCheckout',
+  'QualifiedLead',
+];
+
+/* The two answers the checkout offers. Validated against this list rather than
+   passed through, so a renamed form option cannot quietly ship a new string to
+   Meta: an unrecognised value becomes undefined and the key is simply omitted,
+   which is the safe failure. */
+const OCCUPATIONS: Occupation[] = ['working_professional', 'homemaker'];
 
 export async function POST(req: Request) {
   if (!capiReady()) {
@@ -32,7 +48,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: 'bad-json' }, { status: 400 });
   }
 
-  const eventName = String(body.eventName ?? '') as StandardEvent;
+  const eventName = String(body.eventName ?? '') as SendableEvent;
   if (!ALLOWED.includes(eventName)) {
     return NextResponse.json(
       { ok: false, reason: 'event-not-allowed' },
@@ -42,6 +58,21 @@ export async function POST(req: Request) {
 
   const email = typeof body.email === 'string' ? body.email : '';
   const fbp = typeof body.fbp === 'string' ? body.fbp : undefined;
+
+  const rawOccupation = String(body.occupation ?? '') as Occupation;
+  const occupation = OCCUPATIONS.includes(rawOccupation)
+    ? rawOccupation
+    : undefined;
+
+  /* QualifiedLead means exactly one thing: a working professional reached the
+     payment sheet. Firing it without that answer would dilute the audience it
+     exists to build, so the route refuses rather than sending a vaguer event. */
+  if (eventName === 'QualifiedLead' && occupation !== 'working_professional') {
+    return NextResponse.json(
+      { ok: false, reason: 'not-qualified' },
+      { status: 400 },
+    );
+  }
 
   /* Dedup keys, deterministic so Meta's 48h window collapses double-fires:
      by email where we have one, otherwise by the browser's _fbp. */
@@ -80,6 +111,9 @@ export async function POST(req: Request) {
     },
     valueRupees: CHECKOUT_CONFIG.amountRupees,
     currency: CHECKOUT_CONFIG.currency,
+    /* Only ever set on the two events fired from the checkout form; the
+       landing-page events have no answer to send. */
+    occupation,
     /* No content_name, no UTMs, no order id. These three events happen before
        an order exists, so custom_data carries value and currency alone — see
        the classification note at the top of lib/meta-capi.ts. The UTMs the

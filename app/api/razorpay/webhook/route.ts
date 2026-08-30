@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 import { CHECKOUT_CONFIG, capiReady, isTestMode } from '@/lib/checkout-config';
 import { ga4ServerReady, sendGa4Purchase } from '@/lib/ga4-server';
-import { sendCapiEvent } from '@/lib/meta-capi';
+import { sendCapiEvent, type Occupation } from '@/lib/meta-capi';
 import { unpackContext } from '@/lib/order-notes';
 import { pabblyReady, sendPabblyPurchase } from '@/lib/pabbly';
 
@@ -62,6 +62,15 @@ export async function POST(req: Request) {
   const ctx = unpackContext(notes);
 
   const country = ctx.country || 'in';
+
+  /* Validated against the two known answers rather than passed through: this
+     value reaches Meta's custom_data, which is unhashed and is read when a
+     dataset is classified, so an unrecognised string is dropped rather than
+     forwarded. Pabbly still receives the raw value either way. */
+  const occupation: Occupation | undefined =
+    ctx.occupation === 'working_professional' || ctx.occupation === 'homemaker'
+      ? ctx.occupation
+      : undefined;
   /* Razorpay is the authority on email and phone — it holds what the buyer
      actually paid with, which can differ from what they typed into our form. */
   const email = String(payment.email ?? '') || '';
@@ -164,11 +173,14 @@ export async function POST(req: Request) {
     },
     valueRupees,
     currency: CHECKOUT_CONFIG.currency,
-    /* order_id is the only descriptive field Meta receives. Occupation, the
-       product name and the UTMs are deliberately NOT sent: custom_data is
-       unhashed and is read during dataset classification. They go to Pabbly
-       and GA4 instead, which is where they were actually useful. */
+    /* The only two descriptive fields Meta receives. The product name and the
+       UTMs are still deliberately NOT sent: custom_data is unhashed and is read
+       during dataset classification, and those are the values that name the
+       condition. Occupation is the reviewed exception — neither of its two
+       possible values is a health term, and it is what lets the buyer split be
+       read on Purchase rather than only on pay-intent. */
     orderId: orderId || undefined,
+    occupation,
     testEventCode: CHECKOUT_CONFIG.meta.testEventCode || undefined,
   });
 
