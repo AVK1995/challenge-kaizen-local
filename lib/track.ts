@@ -39,6 +39,8 @@ type Person = {
   city?: string;
   /** ISO 3166-1 alpha-2, from the checkout's country picker. */
   country?: string;
+  /** `working_professional` | `homemaker`, from the checkout's select. */
+  occupation?: string;
 };
 
 /** Fire-and-forget: analytics must never block or fail a click. */
@@ -78,6 +80,21 @@ export function trackBeginCheckout() {
 /** Details valid and the payment sheet is opening. This is the real intent. */
 export function trackInitiateCheckout(person: Person) {
   capi('InitiateCheckout', person);
+
+  /* QualifiedLead, for working professionals only, at the same instant.
+     Not a new funnel stage — InitiateCheckout already marks this moment — but
+     a separate event so the segment the client actually sells to can be
+     optimised toward and seeded into a lookalike. Homemakers deliberately get
+     no second event: a QualifiedLead audience that contains both answers
+     cannot be targeted as one.
+
+     Fired as its own call rather than folded into the one above because Meta
+     dedupes on event_name + event_id, and the route derives a different id per
+     name. Two calls, two events, no collision. */
+  if (person.occupation === 'working_professional') {
+    capi('QualifiedLead', person);
+  }
+
   ga4AddPaymentInfo({ value: VALUE, currency: 'INR' });
 }
 

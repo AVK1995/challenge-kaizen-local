@@ -182,6 +182,7 @@ export default function CheckoutPage() {
       lastName: f.lastName.trim(),
       city: f.city.trim(),
       country: f.country,
+      occupation: f.occupation,
     });
 
     try {

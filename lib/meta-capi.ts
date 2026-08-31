@@ -69,6 +69,36 @@ export type StandardEvent =
   | 'InitiateCheckout'
   | 'Purchase';
 
+/**
+ * Custom events, kept to a closed union for the same reason the standard ones
+ * are: a free-form string is how a health term eventually reaches Meta as an
+ * event name, which is the surface that gets a dataset classified.
+ *
+ * QualifiedLead fires at the same instant as InitiateCheckout — details valid,
+ * payment sheet opening — but only for the occupation the client sells to. It
+ * is a segment label on an existing step rather than a new funnel stage, and it
+ * exists so the higher-intent half can be optimised toward and used as a
+ * lookalike seed. The name carries no condition word, which is what keeps it
+ * safe to add.
+ *
+ * It costs one Aggregated Event Measurement slot on iOS, where standard events
+ * rank above custom ones. That is the known price.
+ */
+export type CustomEvent = 'QualifiedLead';
+
+export type SendableEvent = StandardEvent | CustomEvent;
+
+/**
+ * The occupation answer, as a closed union rather than a string.
+ *
+ * This is the ONE descriptive value allowed into custom_data, and the type is
+ * what keeps that true: neither member is a health or condition term, and a
+ * free-form string here would be an open door for the next field someone
+ * decides to "just add". If a third option is ever added to the checkout, it
+ * gets reviewed here before it can reach Meta.
+ */
+export type Occupation = 'working_professional' | 'homemaker';
+
 export function sha256Hex(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
@@ -139,16 +169,21 @@ function buildUserData(u: UserSignals) {
 export async function sendCapiEvent(params: {
   pixelId: string;
   accessToken: string;
-  eventName: StandardEvent;
+  eventName: SendableEvent;
   eventId: string;
   eventSourceUrl: string;
   user: UserSignals;
   valueRupees: number;
   currency: string;
-  /* The ONLY descriptive field allowed through. It is an opaque Razorpay id,
-     it says nothing about what was bought, and Meta uses it for its own
-     deduplication of a purchase across sources. */
+  /* An opaque Razorpay id. It says nothing about what was bought, and Meta
+     uses it for its own deduplication of a purchase across sources. */
   orderId?: string;
+  /* The working-professional / homemaker split. Typed, not free-form — see the
+     Occupation union above. This is the one descriptive value that earns its
+     place in custom_data: it is what the audience segmentation and the
+     QualifiedLead optimisation are built on, and neither of its two possible
+     values names a condition. */
+  occupation?: Occupation;
   testEventCode?: string;
 }): Promise<{ ok: boolean; status: number; body: unknown }> {
   const body = {
@@ -160,13 +195,15 @@ export async function sendCapiEvent(params: {
         event_source_url: originOnly(params.eventSourceUrl),
         action_source: 'website',
         user_data: buildUserData(params.user),
-        /* Nothing may be added here. See the classification note at the top of
-           this file: every key below is either a number or an opaque id, and
+        /* Nothing may be added here without the same review these four got.
+           See the classification note at the top of this file: every key below
+           is a number, an opaque id, or one of two reviewed enum values, and
            that is the property that keeps this dataset unclassified. */
         custom_data: {
           currency: params.currency,
           value: params.valueRupees,
           ...(params.orderId && { order_id: params.orderId }),
+          ...(params.occupation && { occupation: params.occupation }),
         },
       },
     ],
