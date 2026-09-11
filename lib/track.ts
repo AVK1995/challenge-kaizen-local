@@ -66,7 +66,13 @@ export function trackViewItem() {
   });
 }
 
-/** Any CTA click on the landing page. */
+/**
+ * Checkout ARRIVAL. Named for the Meta event it sends, not for where it once
+ * fired: this used to run off a delegated [data-cta] click listener on the
+ * landing page and was moved to the checkout's mount. Do not move it back. A
+ * page with five to seven CTAs double-counts anyone who taps two of them, and a
+ * click is not an arrival. See FunnelTracker for the full note.
+ */
 export function trackAddToCart() {
   capi('AddToCart');
   ga4AddToCart(money);
