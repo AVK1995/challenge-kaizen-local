@@ -12,6 +12,11 @@ export const RECAP: { title: string; value: number }[] = [
   { title: 'Kaizen Morning Mobility Reset', value: 497 },
   { title: 'Pranayam for Better Sleep', value: 497 },
   { title: 'Nervous System Reset with Prerna', value: 497 },
+  /* Added with the landing page's bonus stack. A buyer who reads seven items
+     on the page and six in the order summary is being shown two offers at the
+     moment they are asked to pay. (Spec PRIORITY 4.) */
+  { title: 'Your (Peri)Menopause Symptom Score', value: 900 },
+  { title: 'Your Movement Readiness Check', value: 900 },
 ];
 
 export const VALUE_TOTAL = RECAP.reduce((n, r) => n + r.value, 0);

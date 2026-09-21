@@ -4,7 +4,7 @@ import { Fraunces, Manrope } from 'next/font/google';
 import Analytics from '@/components/Analytics';
 import MetaPixel from '@/components/MetaPixel';
 import LegoObserver from './_landing/lego';
-import { PRICE, SESSION_TIMES, START_DATE } from './_landing/offer';
+import { PRICE, SESSION_TIMES_PROSE, START_DATE } from './_landing/offer';
 import './globals.css';
 
 /**
@@ -42,7 +42,17 @@ const manrope = Manrope({
   display: 'swap',
 });
 
-const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating perimenopause and menopause: Pilates, yoga, mindfulness and breathwork. Starts ${START_DATE}, ${SESSION_TIMES}, live on Zoom, for ${PRICE}.`;
+/* Named the four modalities the page used to run — "Pilates, yoga, mindfulness
+   and breathwork" — one of which (mindfulness, as a standalone day) is not on
+   the schedule, and omitted sleep, which is now Day 1 and the founder-led one.
+   A search result that promises a day the challenge does not run is a refund
+   request with a delay on it.
+
+   Built from the offer tokens rather than typed, so the date, the timings and
+   the price cannot drift from the page they describe. SESSION_TIMES_PROSE, not
+   SESSION_TIMES: an ampersand in a meta description renders as markup in some
+   SERP previews. (Spec PRIORITY 1.) */
+const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating perimenopause and menopause. Sleep, Pilates, yoga and breathwork with Kaizen founder Prerna. Starts ${START_DATE}, ${SESSION_TIMES_PROSE}, live on Zoom, for ${PRICE}.`;
 
 /* The live origin. Without a metadataBase Next resolves every share URL and
    every relative OG asset against localhost, so a link pasted into WhatsApp

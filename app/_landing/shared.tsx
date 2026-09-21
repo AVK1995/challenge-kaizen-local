@@ -12,12 +12,20 @@
  *   and CORAL (the dot in the Kaizen logo) is the spark, used more scarcely
  *   than the accent. Three icon beds, not seven.
  */
-import { ImageSquare } from '@phosphor-icons/react/dist/ssr';
-import { ArrowRight } from '@phosphor-icons/react/dist/ssr';
+import { ArrowRight, ImageSquare, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { CHECKOUT_HREF } from './offer';
+import {
+  CHECKOUT_HREF,
+  DISCOUNT_BADGE,
+  HAS_ANCHOR,
+  PRICE,
+  PRICE_ANCHOR,
+  REFUND_LINE,
+  SAVING_LINE,
+  SAVING_LINE_DOT,
+} from './offer';
 
 export const C = {
   /* ── environment. Never pure white: #FFFDF8 is warm and does not glare ── */
@@ -191,16 +199,187 @@ export function PrimaryCTA({
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+ *  The price anchor. ONE component, used at every price point on the page:
+ *  hero, offer card, schedule band, options card, inline CTA, recap and the
+ *  docked bar. (Spec BLOCKER 2.)
+ *
+ *  The anchor previously appeared only in the scrolling banner, which is the
+ *  one place on the page a reader is least likely to read and most likely to
+ *  discount. A price with nothing beside it is just a price; the same number
+ *  beside ₹1,599 is a decision.
+ *
+ *  Three rules the sizes all obey:
+ *
+ *   1. The struck figure is ALWAYS smaller and muted, and the real price is
+ *      always the largest thing in the block. Equal weight reads as two prices
+ *      and the reader has to work out which one they pay.
+ *   2. The saving is spelled out in rupees AND in per cent. "69% off" alone
+ *      makes the reader do the sum; "save ₹1,102" alone hides how big it is.
+ *   3. <s> carries a visually-hidden "was" and the live price a "now", so a
+ *      screen reader does not read two bare numbers in a row.
+ * ═══════════════════════════════════════════════════════════════════════ */
+type AnchorSize = 'sm' | 'md' | 'lg';
+
+const ANCHOR_SIZES: Record<AnchorSize, { was: string; now: string; save: string }> = {
+  /* The docked bar: one line, inside a truncating row. */
+  sm: { was: 'text-[12px]', now: 'text-[16px]', save: 'text-[10.5px]' },
+  /* The default, under a CTA. */
+  md: { was: 'text-[15px]', now: 'text-[30px]', save: 'text-[12.5px]' },
+  /* The offer card and the recap, the page's two money peaks. */
+  lg: { was: 'text-[19px]', now: 'text-[46px]', save: 'text-[13px]' },
+};
+
+export function PriceAnchor({
+  size = 'md',
+  onDark = false,
+  stacked = false,
+  align = 'center',
+  note,
+  className = '',
+}: {
+  size?: AnchorSize;
+  onDark?: boolean;
+  /** Anchor on its own line above the price, per the offer-card spec. */
+  stacked?: boolean;
+  align?: 'center' | 'start';
+  /** e.g. "one-time", set beneath the saving line. */
+  note?: string;
+  className?: string;
+}) {
+  const s = ANCHOR_SIZES[size];
+  const wasColor = onDark ? C.onDarkMute : C.inkSoft;
+  const nowColor = onDark ? C.gold : C.goldDeep;
+  const saveColor = onDark ? C.gold : C.coralInk;
+  const items = align === 'center' ? 'items-center text-center' : 'items-start text-left';
+
+  const was = (
+    <s
+      className={`${s.was} font-display font-semibold tabular-nums decoration-[2px] underline-offset-[3px]`}
+      style={{ color: wasColor, textDecorationColor: C.coralInk }}
+    >
+      <span className="sr-only">Was </span>
+      {PRICE_ANCHOR}
+    </s>
+  );
+
+  const now = (
+    <span
+      className={`${s.now} font-display font-semibold leading-none tabular-nums`}
+      style={{ color: nowColor }}
+    >
+      <span className="sr-only">Now </span>
+      {PRICE}
+    </span>
+  );
+
+  /* No anchor configured (or one set at or below the price) means there is no
+     discount to claim: the struck figure and the saving line both disappear and
+     the price stands alone. See HAS_ANCHOR in offer.ts — this is what stops a
+     mistyped env var rendering "You save ₹-2 (-0% off)" on a live page. */
+  return (
+    <div className={`flex flex-col ${items} ${className}`}>
+      {!HAS_ANCHOR ? (
+        <span className="leading-none">{now}</span>
+      ) : stacked ? (
+        <>
+          <span className="leading-none">{was}</span>
+          <span className="mt-1.5 leading-none">{now}</span>
+        </>
+      ) : (
+        <span className="flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1">
+          {was}
+          {now}
+        </span>
+      )}
+
+      {HAS_ANCHOR && (
+        <span
+          className={`${s.save} mt-2 font-semibold`}
+          style={{ color: saveColor }}
+        >
+          {stacked ? SAVING_LINE_DOT : SAVING_LINE}
+        </span>
+      )}
+
+      {note && (
+        <span
+          className="mt-1 text-[12.5px]"
+          style={{ color: onDark ? C.onDarkMute : C.inkSoft }}
+        >
+          {note}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The hero's discount badge. Coral rather than gold: it is the one moment on
+ * the page where the saving itself is the message, and gold is already doing
+ * the work of "premium" three inches above it.
+ */
+export function DiscountBadge({ onDark = false }: { onDark?: boolean }) {
+  /* Nothing to badge when there is no discount. */
+  if (!HAS_ANCHOR) return null;
+
+  return (
+    <span
+      className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]"
+      style={
+        onDark
+          ? {
+              background: 'rgba(238,119,120,0.18)',
+              border: '1px solid rgba(238,119,120,0.42)',
+              color: '#FBC9C4',
+            }
+          : { background: C.coralBed, color: C.coralInk }
+      }
+    >
+      {DISCOUNT_BADGE}
+    </span>
+  );
+}
+
 /**
  * The reassurance line, welded tight under the button — never separated from
  * it, because the rush and the reassurance are one beat.
+ *
+ * The shield ALWAYS comes with it. The refund promise ran under six different
+ * buttons with a shield under exactly one of them (the hero), which made the
+ * hero's version look like the real guarantee and the other five like small
+ * print. One string, one glyph, one treatment, everywhere — including the
+ * docked bar. Nothing calls this without the icon; that is the point of the
+ * component.
+ *
+ * `text` defaults to the refund line because that is what it is for at every
+ * call site on the site.
  */
-export function CtaNote({ text, onDark = false }: { text: string; onDark?: boolean }) {
+export function CtaNote({
+  text = REFUND_LINE,
+  onDark = false,
+  className = '',
+  size = 'md',
+}: {
+  text?: string;
+  onDark?: boolean;
+  className?: string;
+  /** sm is the docked bar, where the row is already three lines tall. */
+  size?: 'sm' | 'md';
+}) {
+  const sm = size === 'sm';
   return (
     <p
-      className="mt-3.5 text-center text-[13.5px] font-medium"
+      className={`flex items-center justify-center gap-1.5 text-center font-medium ${
+        sm ? 'text-[11.5px]' : 'text-[13.5px]'
+      } ${className}`}
       style={{ color: onDark ? C.onDarkMute : C.inkSoft }}
     >
+      <ShieldCheck
+        weight="fill"
+        className={sm ? 'h-3 w-3 shrink-0' : 'h-4 w-4 shrink-0'}
+        style={{ color: onDark ? C.coral : C.coralInk }}
+      />
       {text}
     </p>
   );

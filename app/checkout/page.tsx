@@ -144,6 +144,49 @@ export default function CheckoutPage() {
     trackAddToCart();
   }, []);
 
+  /* ── Warm the Razorpay SDK while the form is being filled ──────────────
+     The pay tap used to do three things in series before anything appeared:
+     download and parse ~100KB of checkout.js, POST to /api/razorpay/create-order
+     and wait for Razorpay to mint an order, then open the sheet. On a mid-range
+     Android on 4G that is comfortably several seconds of a button that has
+     visibly been pressed and produced nothing, which is the window in which
+     people tap again or leave.
+
+     Fetching it on idle removes the first leg entirely: by the time anyone has
+     typed a name, an email, a city and a phone number, the SDK is already
+     parsed and `loadRazorpay()` in startPayment resolves on its first line.
+
+     On IDLE, not on mount — the script must not compete with the form's own
+     first paint. requestIdleCallback where it exists (not Safari before 16.4),
+     a 1.5s timer where it does not. Failure is silent and costs nothing: the
+     tap path still loads the SDK itself. */
+  useEffect(() => {
+    let cancelled = false;
+    const warm = () => {
+      if (!cancelled) void loadRazorpay();
+    };
+
+    type IdleWindow = Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    const w = window as IdleWindow;
+
+    if (typeof w.requestIdleCallback === 'function') {
+      const id = w.requestIdleCallback(warm, { timeout: 2500 });
+      return () => {
+        cancelled = true;
+        w.cancelIdleCallback?.(id);
+      };
+    }
+
+    const t = window.setTimeout(warm, 1500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, []);
+
   const v = useMemo(() => {
     const digits = f.phone.replace(/\D/g, '');
     return {
@@ -298,7 +341,9 @@ export default function CheckoutPage() {
                 Where should we send your seat?
               </h2>
               <p className="mt-2 text-[12.5px] sm:text-[13px]" style={{ color: C.inkSoft }}>
-                Your Zoom link, reminders and all six guides go to these.
+                {/* Was "all six guides" — a count that was already wrong and
+                    would drift again the next time the stack changed. */}
+                Your Zoom link, reminders and all your guides go to these.
               </p>
 
               <div className="mt-6 flex flex-col gap-4">
@@ -467,7 +512,17 @@ export default function CheckoutPage() {
                 <span aria-hidden="true">·</span>
                 <span className="whitespace-nowrap">SSL Encrypted</span>
                 <span aria-hidden="true">·</span>
-                <span className="whitespace-nowrap">{CTA_NOTE}</span>
+                {/* Same shield as every other instance of this line on the
+                    site. The two pointers beside it already carry a glyph
+                    each, so this one was the odd one out here as well. */}
+                <span className="inline-flex items-center gap-1 whitespace-nowrap sm:gap-1.5">
+                  <ShieldCheck
+                    weight="fill"
+                    className="h-3 w-3 shrink-0"
+                    style={{ color: C.coralInk }}
+                  />
+                  {CTA_NOTE}
+                </span>
               </div>
 
               <p
@@ -695,7 +750,11 @@ function OrderSummary() {
         className="mt-4 flex items-center justify-center gap-1.5 text-center text-[12px]"
         style={{ color: C.inkSoft }}
       >
-        <ShieldCheck weight="fill" className="h-3.5 w-3.5" style={{ color: C.goldInk }} />
+        {/* Coral, matching every other instance of this line. It was gold here,
+            which is the same glyph in the accent the page uses for PRICE — so
+            the guarantee read as part of the money rather than as reassurance
+            against it. */}
+        <ShieldCheck weight="fill" className="h-3.5 w-3.5" style={{ color: C.coralInk }} />
         {CTA_NOTE}
       </p>
     </div>

@@ -30,12 +30,11 @@ import { domAnimation, LazyMotion } from './motion-lite';
 import {
   CHECKOUT_HREF,
   CTA_LABEL,
-  CTA_NOTE,
   SESSION_TIMES,
   SESSION_TIMES_TZ,
 } from './offer';
 import Proof from './proof';
-import { C, SectionHeading } from './shared';
+import { C, CtaNote, PriceAnchor, SectionHeading } from './shared';
 import Toolkit from './toolkit';
 
 /* Three beds, rotated. Not seven: the brand has three colours, and a card grid
@@ -162,31 +161,38 @@ function Experience() {
    in a row. The rail's progress is a single CSS variable written by a
    rAF-throttled scroll handler; nodes ignite as the fill reaches them.
  */
+/* ⚠️ THIS IS THE SCHEDULE BEING DELIVERED. The page previously described a
+   different one: it opened with Mat Pilates, put Hatha Yoga on Day 2 and ran
+   "Yoga Nidra + EFT for Better Sleep" on Day 4. Sleep is now Day 1 and is led
+   by Prerna herself, there is no Yoga Nidra or EFT day, and the two Pilates
+   days sit together at 2 and 3. If the cohort's running order changes again,
+   it changes HERE and in the bonus-stack art, and nowhere else. (Spec
+   PRIORITY 1.) */
 const DAYS = [
   {
     n: 'Day 1',
-    title: 'Mat Pilates for Pain & Stiffness',
-    body: 'Begin with guided mat Pilates designed to loosen stiff joints and shoulders, ease everyday discomfort and help your body move more comfortably.',
+    title: 'Sleep Reset with Prerna',
+    body: 'Learn what is disrupting your sleep in this phase, and the practices that help your body settle towards rest. Led by Kaizen founder Prerna.',
   },
   {
     n: 'Day 2',
-    title: 'Hatha Yoga for Stress & Anxiety',
-    body: 'Use Hatha Yoga and mindful movement to release built-up tension, settle restlessness and create greater calm in your body and mind.',
+    title: 'Mat Pilates for Pain & Stiffness',
+    body: 'Guided mat Pilates to loosen stiff joints and shoulders, ease everyday discomfort and help your body move more comfortably.',
   },
   {
     n: 'Day 3',
     title: 'Mat Pilates for Strength & Mobility',
-    body: 'Build strength, improve mobility and develop better support through your body with a second guided mat Pilates session.',
+    body: 'Build strength, improve mobility and develop better support through your body.',
   },
   {
     n: 'Day 4',
-    title: 'Yoga Nidra + EFT for Better Sleep',
-    body: 'Experience Yoga Nidra and EFT practices designed to release built-up stress, quiet a restless mind and prepare your body for deeper sleep.',
+    title: 'Hatha Yoga for Stress & Anxiety',
+    body: 'Release built-up tension, settle restlessness and create calm in your body and mind.',
   },
   {
     n: 'Day 5',
     title: 'Breathwork for Hormonal Balance',
-    body: 'Bring the five days together with guided breathwork that deepens your mind-body connection and helps you feel calmer and more balanced through hormonal changes.',
+    body: 'Bring the five days together with guided breathwork that deepens your mind-body connection. Led by Prerna.',
   },
 ];
 
@@ -367,6 +373,7 @@ function SessionsBand() {
         </p>
 
         <div className="mx-auto mt-8 flex max-w-[430px] flex-col items-center">
+          <PriceAnchor size="md" onDark className="mb-6" />
           <Link
             href={CHECKOUT_HREF}
             data-cta
@@ -385,9 +392,7 @@ function SessionsBand() {
               />
             </span>
           </Link>
-          <p className="mt-3.5 text-[13.5px] font-medium" style={{ color: C.onDarkMute }}>
-            {CTA_NOTE}
-          </p>
+          <CtaNote onDark className="mt-3.5" />
         </div>
       </div>
     </section>
@@ -472,6 +477,64 @@ function Recognition() {
   );
 }
 
+/* ══ 8b · The inline CTA after the bonus stack ═════════════════════════════
+ *
+ * The one gap in the page's click path. Between the schedule band and the "Now
+ * You Have Two Options From Here" card there was nothing tappable in the page
+ * BODY at all — on a 375px viewport that is roughly thirteen screens of
+ * testimonials, toolkit and founder story with no way to act on any of it
+ * except the docked bar. The bonus stack is the page's first accumulation
+ * peak, and it ended by handing the reader straight into a biography.
+ *
+ * So it lands immediately after the last bonus and immediately before MEET
+ * YOUR GUIDE, which is exactly where the intent is highest. (Spec BLOCKER 3.)
+ *
+ * ONE CTA, deliberately. The instruction is explicit that no others are added,
+ * and it is the right instruction: a page that repeats its button every two
+ * screens reads as a page that does not trust its own argument.
+ *
+ * Styled as the hero button — the same gold fill, navy label, pill and
+ * shimmer — rather than as the navy PrimaryCTA, so the two strongest moments
+ * on the page look like the same object.
+ */
+function InlineCta() {
+  return (
+    /* NO top padding. The toolkit's TOTAL VALUE box is the setup and this price
+       is the payoff — they are one beat, and the section rhythm was putting the
+       toolkit's 96px bottom padding plus this section's own 56px top padding
+       between them. On desktop that read as two unrelated blocks with a hole in
+       the middle. The toolkit's bottom padding was trimmed to match; between
+       them they now leave roughly a third of what they did. */
+    <section className="px-4 pb-12 pt-0 sm:pb-16" style={{ background: C.canvas }}>
+      <div className="mx-auto flex max-w-[520px] flex-col items-center">
+        <PriceAnchor size="md" className="mb-6" />
+
+        <Link
+          href={CHECKOUT_HREF}
+          data-cta
+          className="lego-press cta-shimmer group inline-flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-full px-8 font-body text-[15.5px] font-bold"
+          style={{
+            background: C.ctaGold,
+            color: C.ink,
+            boxShadow: '0 16px 34px -18px rgba(31,50,92,0.55)',
+            ['--shimmer' as string]: 'rgba(255,255,255,0.55)',
+          }}
+        >
+          <span className="inline-flex items-center gap-2.5">
+            {CTA_LABEL}
+            <ArrowRight
+              weight="bold"
+              className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"
+            />
+          </span>
+        </Link>
+
+        <CtaNote className="mt-3.5" />
+      </div>
+    </section>
+  );
+}
+
 export default function BelowFold() {
   /* LazyMotion mounts the single IntersectionObserver that adds `bw-in` to
      revealed elements. Without it every .bw-reveal-* stays at opacity 0 once
@@ -484,6 +547,10 @@ export default function BelowFold() {
       <Recognition />
       <Proof />
       <Toolkit />
+      {/* Sits between the last bonus and MEET YOUR GUIDE (the first section
+          inside Close). Do not move it inside Toolkit: the section's own
+          background band is what separates it from the cards above. */}
+      <InlineCta />
       <Close />
     </LazyMotion>
   );
