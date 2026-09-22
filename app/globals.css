@@ -601,16 +601,12 @@ button {
 @media (min-width: 1024px) { .kz-masonry { column-count: 3; } }
 
 /* ── the docked CTA ─────────────────────────────────────────────────────── */
-@keyframes kz-dock {
-  0% { opacity: 0; transform: translate3d(0, 100%, 0); }
-  62% { opacity: 1; transform: translate3d(0, -6px, 0); }
-  80% { transform: translate3d(0, 2px, 0); }
-  100% { opacity: 1; transform: none; }
-}
-.kz-dock {
-  animation: kz-dock 0.78s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 0.35s;
-}
+/* The docked bar's entry animation lived here: a 0.78s slide-and-settle on a
+   further 0.35s delay. Both are gone, and the rule with them.
+   The bar is now visible in the first paint of the server HTML rather than
+   arriving over a second later — see app/_landing/sticky-cta.tsx. Deleted
+   rather than left unused, so it cannot quietly be reapplied to the one piece
+   of page chrome whose whole job is to be available immediately. */
 
 @media (max-width: 720px) {
   .kz-recap { padding: 58px 22px 40px; }
@@ -667,7 +663,8 @@ button {
   }
   .cta-breath,
   .tl-node.is-on .tl-node-inner { animation: none !important; }
-  .kz-dock { animation: none !important; opacity: 1; transform: none; }
+  /* .kz-dock removed with the rule it reset — the docked bar no longer
+     animates in for anyone, so reduced motion has nothing to switch off. */
   .tl-fill { transition: none !important; }
 }
 

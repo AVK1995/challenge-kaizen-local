@@ -25,6 +25,7 @@ import {
   Star,
   VideoCamera,
 } from '@phosphor-icons/react/dist/ssr';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import BrandMark from './brand-mark';
@@ -32,37 +33,63 @@ import { legoBrick, legoDelay } from './lego-style';
 import {
   CHECKOUT_HREF,
   CTA_LABEL,
-  CTA_NOTE_HERO,
+  HAS_ANCHOR,
   PRICE,
-  PRICE_RISES_TO,
+  PRICE_ANCHOR,
+  REFUND_LINE,
+  SEATS_CAP,
+  SEATS_LEFT,
   SESSION_TIMES,
+  SESSION_TIMES_PROSE,
   START_DATE,
   WOMEN_SUPPORTED,
 } from './offer';
 import { asset } from './asset-version';
-import { Art, C } from './shared';
+import { C, CtaNote, DiscountBadge, PriceAnchor } from './shared';
 
 /* ══ 0 · Announcement strip (R10) ══════════════════════════════════════════
    A slim navy strip with one live coral dot and a slow shine, so it reads as
    alive rather than as a static red sale bar. It names a specific price, a
-   specific anchor and a specific date — never "limited time".
+   specific anchor and a specific number — never "limited time".
 
-   ⚠️ FLAG FOR ATUL: "Price Increases To ₹1599 Tomorrow" is rendered verbatim
-   from the copy. On an evergreen page "Tomorrow" is a claim that stops being
-   true the day after launch. Either the campaign carries a real dated
-   deadline, or that segment needs re-wording by NO-BRAINER. Not silently
-   changed here. */
+   The old second segment read "Price Increases To ₹1599 Tomorrow" and had done
+   so, unchanged, for several weeks while the price stayed at ₹497. A deadline
+   that never arrives does not just stop working; it teaches the reader to
+   discount every other claim on the page, including the ones that are true.
+
+   It is now the seat cap — spec BLOCKER 2, option B, taken because no dated
+   instruction arrived by Sunday 21 Sept. ⚠️ SEATS_LEFT is a real number that
+   someone has to keep current (see offer.ts). A stale seat count is the same
+   broken promise wearing different clothes. */
 export function AnnouncementBar() {
   const segments = [
     <>
       <span className="font-bold">Special Offer:</span> 5-Day (Peri)Menopause
-      Reset Challenge for <span style={{ color: C.gold }}>{PRICE}</span>
+      Reset Challenge for{' '}
+      {/* Guarded like every other price point: with no valid anchor there is
+          nothing to strike, and a struck figure BELOW the one being charged is
+          worse than none at all. See HAS_ANCHOR in offer.ts. */}
+      {HAS_ANCHOR && (
+        <>
+          <s
+            className="decoration-[1.5px]"
+            style={{ color: 'rgba(253,249,241,0.6)', textDecorationColor: C.coral }}
+          >
+            {PRICE_ANCHOR}
+          </s>{' '}
+        </>
+      )}
+      <span className="font-bold" style={{ color: C.gold }}>
+        {PRICE}
+      </span>
     </>,
     <>
-      Price Increases To <span style={{ color: C.gold }}>{PRICE_RISES_TO}</span>{' '}
-      Tomorrow
+      Live batches capped at {SEATS_CAP} women ·{' '}
+      <span className="font-bold" style={{ color: C.gold }}>
+        {SEATS_LEFT} seats left
+      </span>
     </>,
-    <>100% Money-Back Guarantee</>,
+    <>{REFUND_LINE}</>,
     <>
       Live · Starts {START_DATE} · {SESSION_TIMES}
     </>,
@@ -141,6 +168,83 @@ const HERO_FACTS = [
   { icon: VideoCamera, text: 'Live, Coach-Led Sessions' },
 ];
 
+/* ══ 1a · The credential card ══════════════════════════════════════════════
+ *
+ * This slot held the "system stack" graphic: a flat image of everything
+ * included, carrying its whole message as text baked into pixels. Three things
+ * were wrong with that at the top of the page. The text resampled soft on a
+ * phone, none of it was selectable or searchable, and — the real cost — the
+ * first object under the H1 was a picture of a bundle rather than the person
+ * running it. The reader's first question on a page like this is who is
+ * teaching, and it was being answered four screens down.
+ *
+ * So: the same slot, built in HTML and CSS, saying who she is. (Spec
+ * PRIORITY 3.)
+ *
+ * The photograph is the SUPPLIED portrait and nothing else. No generated or
+ * illustrated likeness, per the spec — it is a real person's face and the only
+ * acceptable source for it is the one Kaizen sent.
+ */
+function CredentialCard() {
+  return (
+    <div
+      className="mb-6 flex items-center gap-4 rounded-2xl p-4 text-left sm:gap-5 sm:p-5"
+      style={{
+        background: `linear-gradient(150deg, ${C.goldWash} 0%, ${C.canvas} 70%)`,
+        border: `1px solid ${C.line}`,
+      }}
+    >
+      {/* Fixed pixel box, not a fill-parent: the photo is a known size here and
+          a circle that resizes with the column crops the face differently at
+          every breakpoint. object-top keeps her eyes in frame on the square
+          crop rather than centring on the collarbone. */}
+      <span
+        className="relative block h-[78px] w-[78px] shrink-0 overflow-hidden rounded-full sm:h-[88px] sm:w-[88px]"
+        style={{ boxShadow: `0 0 0 3px ${C.canvas}, 0 0 0 4px ${C.goldMid}` }}
+      >
+        <Image
+          src={asset('/images/prerna-portrait.jpg')}
+          alt="Prerna Khetrapal, founder of Kaizen Goa"
+          fill
+          sizes="88px"
+          priority
+          className="object-cover object-top"
+        />
+      </span>
+
+      <div className="min-w-0">
+        <p
+          className="text-[10px] font-bold uppercase tracking-[0.16em]"
+          style={{ color: C.goldInk }}
+        >
+          Led by
+        </p>
+        <p
+          className="mt-1 font-display text-[19px] font-semibold leading-tight sm:text-[21px]"
+          style={{ color: C.ink }}
+        >
+          Prerna Khetrapal
+        </p>
+        <p className="mt-1 text-[12.5px] leading-snug" style={{ color: C.inkSoft }}>
+          Founder, Kaizen Goa · MBA, ISB Hyderabad
+        </p>
+        <p className="mt-1.5 text-[12.5px] leading-snug" style={{ color: C.inkSoft }}>
+          <span className="font-bold" style={{ color: C.coralInk }}>
+            {WOMEN_SUPPORTED}
+          </span>{' '}
+          women supported through perimenopause and menopause
+        </p>
+        <p
+          className="mt-2.5 border-t pt-2.5 text-[12px] font-semibold leading-snug"
+          style={{ borderColor: C.line, color: C.ink }}
+        >
+          Live on Zoom · {SESSION_TIMES_PROSE} · {PRICE}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function Hero() {
   return (
     <>
@@ -150,24 +254,30 @@ export function Hero() {
         <div className="mx-auto grid max-w-[1180px] items-center gap-9 px-5 pt-6 sm:gap-12 md:px-8 lg:grid-cols-[1.04fr_0.96fr] lg:gap-16 lg:pt-10">
           {/* ══ LEFT ══════════════════════════════════════════════════════ */}
           <div className="text-center lg:text-left">
-            {/* The gate line: who this is for, said before anything is sold. */}
-            <span
-              className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em]"
-              style={{
-                background: 'rgba(242,221,182,0.10)',
-                border: '1px solid rgba(242,221,182,0.28)',
-                color: C.gold,
-              }}
-            >
+            {/* The gate line: who this is for, said before anything is sold.
+                The discount badge sits beside it rather than above the H1, so
+                the two eyebrow-weight objects read as one row instead of
+                stacking into a pile of pills above the headline. */}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 lg:justify-start">
               <span
-                className="lego-pulse-dot inline-block h-2 w-2 shrink-0 rounded-full"
+                className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em]"
                 style={{
-                  background: C.coral,
-                  ['--dot-pulse' as string]: 'rgba(238,119,120,0.6)',
+                  background: 'rgba(242,221,182,0.10)',
+                  border: '1px solid rgba(242,221,182,0.28)',
+                  color: C.gold,
                 }}
-              />
-              For Women Navigating Perimenopause &amp; Menopause · 5-Day Reset
-            </span>
+              >
+                <span
+                  className="lego-pulse-dot inline-block h-2 w-2 shrink-0 rounded-full"
+                  style={{
+                    background: C.coral,
+                    ['--dot-pulse' as string]: 'rgba(238,119,120,0.6)',
+                  }}
+                />
+                For Women Navigating Perimenopause &amp; Menopause · 5-Day Reset
+              </span>
+              <DiscountBadge onDark />
+            </div>
 
             {/* ONE lit token in the headline: the number that carries the
                 promise. Everything else stays warm white, which is what stops
@@ -200,7 +310,14 @@ export function Hero() {
               {START_DATE}, live on Zoom.
             </p>
 
-            <div className="mt-9 flex justify-center lg:justify-start">
+            {/* The anchor, above the button rather than below it: the reader
+                should know what the number is worth BEFORE they read the price
+                welded into the CTA label. (Spec BLOCKER 2.) */}
+            <div className="mt-8 flex justify-center lg:justify-start">
+              <PriceAnchor size="md" onDark align="center" className="lg:items-start" />
+            </div>
+
+            <div className="mt-7 flex justify-center lg:justify-start">
               {/* Shimmer, but no breath: the offer card beside it is the page's
                   focal action and carries the one breathing CTA. Two breathing
                   buttons on one screen is two primaries, which is none. */}
@@ -226,13 +343,7 @@ export function Hero() {
             </div>
 
             {/* Welded to the button, never floated away from it. */}
-            <p
-              className="mt-4 flex items-center justify-center gap-2 text-[13.5px] font-medium lg:justify-start"
-              style={{ color: C.onDarkMute }}
-            >
-              <ShieldCheck weight="fill" className="h-4 w-4" style={{ color: C.coral }} />
-              {CTA_NOTE_HERO}
-            </p>
+            <CtaNote onDark className="mt-4 lg:justify-start" />
 
             {/* The three facts, on a hairline rule rather than in boxes. */}
             <ul
@@ -282,17 +393,9 @@ export function Hero() {
                   '0 0 0 8px rgba(242,221,182,0.07), 0 34px 70px -30px rgba(0,0,0,0.6)',
               }}
             >
-              {/* The slot the card's own comment always anticipated: art sits
-                  above the eyebrow, reserved at its final ratio so the card
-                  does not change height when a still or a clip lands. */}
-              <Art
-                src={asset('/images/system-stack.png')}
-                alt="Everything included: Prerna, the live Zoom sessions, the Kaizen community, the four guides, the five day cards and the guided audio, for ₹497"
-                ratio="3 / 2"
-                sizes="(min-width: 1024px) 420px, 100vw"
-                priority
-                className="mb-6"
-              />
+              {/* Was the system-stack graphic. It is now a credential card in
+                  HTML and CSS — see CredentialCard below for why. */}
+              <CredentialCard />
 
               <span
                 className="inline-flex items-center rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.18em]"
@@ -311,16 +414,20 @@ export function Hero() {
                 Live expert-led sessions · Zoom · 2 session timings
               </p>
 
+              {/* The offer card's price, and the page's primary money moment.
+                  Set stacked — anchor, then price, then the saving, then the
+                  term — exactly as the spec lays it out. */}
               <div
-                className="mt-6 flex items-baseline justify-center gap-3 border-t pt-6 lg:justify-start"
+                className="mt-6 border-t pt-6"
                 style={{ borderColor: C.line }}
               >
-                <span className="kz-lit font-display text-[46px] font-semibold leading-none">
-                  {PRICE}
-                </span>
-                <span className="text-[13px]" style={{ color: C.inkSoft }}>
-                  one-time
-                </span>
+                <PriceAnchor
+                  size="lg"
+                  stacked
+                  align="center"
+                  note="one-time"
+                  className="lg:items-start lg:text-left"
+                />
               </div>
 
               {/* THE breathing CTA. The only one on the page. */}
@@ -373,7 +480,16 @@ export function Hero() {
 const STATS = [
   { icon: Heart, big: WOMEN_SUPPORTED, small: 'Women Supported', bed: C.coralBed, fg: C.coralInk },
   { icon: Star, big: '4.9 / 5', small: 'Women 40–55', bed: C.goldPale, fg: C.goldInk },
-  { icon: ShieldCheck, big: '100%', small: 'Money-Back Guarantee', bed: C.navyBed, fg: C.ink },
+  /* Was "100%" / "Money-Back Guarantee". The figure and the label together now
+     read as the page's one refund string — "Full refund if you don't love Day
+     One." — rather than as a third wording of the same promise. (BLOCKER 4.) */
+  {
+    icon: ShieldCheck,
+    big: 'Full refund',
+    small: "if you don't love Day One.",
+    bed: C.navyBed,
+    fg: C.ink,
+  },
   {
     icon: SealCheck,
     big: 'Certified Coaches',
