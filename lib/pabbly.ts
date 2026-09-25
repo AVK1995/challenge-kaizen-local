@@ -59,6 +59,20 @@ export type PabblyPurchase = {
   currency: string;
   product: string;
   occupation: string;
+  /**
+   * WHICH PASS: 'standard' | 'vip'. The field the fulfilment router should
+   * branch on, and the reason it exists rather than reusing what was already
+   * here.
+   *
+   * `amount` looks like it would do the job and does not: the price is an env
+   * var, a VIP tier repriced to ₹1,299 or a standard tier raised to ₹597 would
+   * silently send every buyer down the wrong branch, and nothing would fail
+   * loudly. `product` carries the offer WORDING, so a router matching it
+   * breaks the next time someone rewords the card.
+   *
+   * This value is the tier's own id. It changes only if the tier changes.
+   */
+  tier: string;
 };
 
 /* Every key is emitted on every call, empty string where unknown. Pabbly
@@ -117,6 +131,7 @@ export async function sendPabblyPurchase(
         currency: s(p.currency),
         product: s(p.product),
         occupation: s(p.occupation),
+        tier: s(p.tier),
       }),
     });
     return { ok: res.ok, status: res.status };

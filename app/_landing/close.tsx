@@ -38,7 +38,7 @@ import { asset } from './asset-version';
 import BrandMark from './brand-mark';
 import { legoBrick, legoDelay } from './lego-style';
 import {
-  CHECKOUT_HREF,
+  OTO_HREF,
   CTA_LABEL,
   PRICE,
   REFUND_LINE,
@@ -395,10 +395,10 @@ function Results() {
    emphasis, muted type — and Option 2 is the lifted navy card that carries the
    click. The layout decides before the copy is read.
 
-   ⚠️ FLAG FOR ATUL: the source writes the button as "[Take Action · ₹497 →]".
-   The square brackets and the arrow are the copy's shorthand for "this is a
-   button", so the label renders as "Take Action · ₹497" with the page's arrow
-   token. If the brackets were meant literally, say so and they go back in. */
+   The button read "Take Action · ₹497", from the source copy. It now carries
+   CTA_LABEL like every other CTA in the page body: this was the one button on
+   the page with its own wording, which made the decision card look like it was
+   offering a different thing from the six buttons around it. */
 function TwoOptions() {
   return (
     <section className="px-4 py-12 sm:py-20 lg:py-24" style={{ background: C.canvas }}>
@@ -460,7 +460,7 @@ function TwoOptions() {
           <PriceAnchor size="md" onDark className="mt-7" />
 
           <Link
-            href={CHECKOUT_HREF}
+            href={OTO_HREF}
             data-cta
             className="lego-press cta-shimmer group mt-6 inline-flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-full px-6 font-body text-[15px] font-bold"
             style={{
@@ -470,7 +470,7 @@ function TwoOptions() {
             }}
           >
             <span className="inline-flex items-center gap-2.5">
-              Take Action · {PRICE}
+              {CTA_LABEL}
               <ArrowRight
                 weight="bold"
                 className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"

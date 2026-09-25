@@ -13,8 +13,15 @@
  *
  * v2: 29 Aug 2026, hero card art and the day-card / system-stack artwork
  *     regenerated against the revised five-day schedule.
+ * v3: 25 Sep 2026, system-stack.png re-cut — the five day cards now match the
+ *     delivered schedule (the previous cut still showed face yoga and a
+ *     nutrition day) and the frame moved from 3:2 to 2752x1536. Guide_06,
+ *     Guide_07 and included_01 were also replaced in this cycle. All four kept
+ *     their filenames, which is precisely the case this version exists for:
+ *     without the bump the edge and the image optimizer keep serving the old
+ *     bytes, and the wrong schedule stays live while the file on disk is right.
  */
-export const ASSET_V = '2';
+export const ASSET_V = '3';
 
 /** Appends the version to a /public path. */
 export const asset = (path: string) => `${path}?v=${ASSET_V}`;

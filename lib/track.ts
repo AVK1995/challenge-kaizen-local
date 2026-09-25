@@ -1,6 +1,6 @@
 'use client';
 
-import { PRICE_RUPEES } from '@/app/_landing/offer';
+import { TIER_BASE, type Tier } from '@/app/_landing/offer';
 import { collectSignals, readCookie } from '@/lib/client-signals';
 import {
   ga4AddPaymentInfo,
@@ -22,14 +22,27 @@ import {
  * file instead of every call site.
  */
 
-const VALUE = PRICE_RUPEES;
-const ITEM: Ga4Item = {
-  item_id: 'kaizen-5day-reset',
-  item_name: '5-Day (Peri)Menopause Reset Challenge',
-  price: VALUE,
-  quantity: 1,
+/**
+ * The money on an event, per tier.
+ *
+ * Every call takes a Tier and defaults to base, because the landing page and
+ * its ViewContent genuinely are about the base price — that is the number the
+ * reader has seen at that point. From the OTO onward the tier is known, and
+ * reporting ₹497 for a ₹997 sale would understate revenue in GA4 and teach
+ * Meta to bid for the cheaper buyer.
+ *
+ * item_id carries the tier too. Without it the two passes collapse into one
+ * row in GA4's item report and there is no way to see which one people take.
+ */
+const moneyFor = (tier: Tier) => {
+  const item: Ga4Item = {
+    item_id: `kaizen-5day-reset-${tier.id}`,
+    item_name: tier.name,
+    price: tier.rupees,
+    quantity: 1,
+  };
+  return { value: tier.rupees, currency: 'INR', items: [item] };
 };
-const money = { value: VALUE, currency: 'INR', items: [ITEM] };
 
 type Person = {
   email?: string;
@@ -119,9 +132,9 @@ function capi(eventName: string, person: Person = {}) {
  * GA4 goes immediately — it has its own dataLayer queue for the same race and
  * does not need this one. Meta waits for _fbp; see the note above whenFbpReady.
  */
-export function trackViewItem() {
+export function trackViewItem(tier: Tier = TIER_BASE) {
   once('view_item', () => {
-    ga4ViewItem(money);
+    ga4ViewItem(moneyFor(tier));
     void whenFbpReady().then(() => capi('ViewContent'));
   });
 }
@@ -133,8 +146,8 @@ export function trackViewItem() {
  * page with five to seven CTAs double-counts anyone who taps two of them, and a
  * click is not an arrival. See FunnelTracker for the full note.
  */
-export function trackAddToCart() {
-  ga4AddToCart(money);
+export function trackAddToCart(tier: Tier = TIER_BASE) {
+  ga4AddToCart(moneyFor(tier));
   /* Same mount-timing race as ViewContent, and it bites hardest on exactly the
      visitor this event exists for: someone who opens /checkout straight from an
      email or a retargeting ad has never loaded the landing page, so there is no
@@ -144,8 +157,8 @@ export function trackAddToCart() {
 }
 
 /** The checkout page has loaded. */
-export function trackBeginCheckout() {
-  ga4BeginCheckout(money);
+export function trackBeginCheckout(tier: Tier = TIER_BASE) {
+  ga4BeginCheckout(moneyFor(tier));
 }
 
 /**
@@ -158,7 +171,7 @@ export function trackBeginCheckout() {
  * has been on the browser the whole time, and this payload already carries the
  * email, phone, name and city that match far more strongly than a cookie id.
  */
-export function trackInitiateCheckout(person: Person) {
+export function trackInitiateCheckout(person: Person, tier: Tier = TIER_BASE) {
   capi('InitiateCheckout', person);
 
   /* QualifiedLead, for working professionals only, at the same instant.
@@ -175,19 +188,19 @@ export function trackInitiateCheckout(person: Person) {
     capi('QualifiedLead', person);
   }
 
-  ga4AddPaymentInfo({ value: VALUE, currency: 'INR' });
+  ga4AddPaymentInfo({ value: tier.rupees, currency: 'INR' });
 }
 
 /**
  * GA4 only. Meta's Purchase comes from the Razorpay webhook, where the payment
  * is proven — firing it here as well would double-count every sale.
  */
-export function trackPurchase(transactionId: string) {
+export function trackPurchase(transactionId: string, tier: Tier = TIER_BASE) {
   /* Keyed on the payment id, not a fixed string: a refresh, a back-forward, or
      the buyer reopening the confirmation link must not count the sale twice,
      but a genuine second purchase later must still count. Without this GA4
      revenue inflates every time someone reloads the page. */
   once(`purchase_${transactionId}`, () => {
-    ga4Purchase({ transactionId, ...money });
+    ga4Purchase({ transactionId, ...moneyFor(tier) });
   });
 }

@@ -25,14 +25,14 @@ import {
   Star,
   VideoCamera,
 } from '@phosphor-icons/react/dist/ssr';
-import Image from 'next/image';
 import Link from 'next/link';
 
 import BrandMark from './brand-mark';
 import { legoBrick, legoDelay } from './lego-style';
 import {
-  CHECKOUT_HREF,
+  OTO_HREF,
   CTA_LABEL,
+  CTA_LABEL_CARD,
   HAS_ANCHOR,
   PRICE,
   PRICE_ANCHOR,
@@ -40,12 +40,11 @@ import {
   SEATS_CAP,
   SEATS_LEFT,
   SESSION_TIMES,
-  SESSION_TIMES_PROSE,
   START_DATE,
   WOMEN_SUPPORTED,
 } from './offer';
 import { asset } from './asset-version';
-import { C, CtaNote, DiscountBadge, PriceAnchor } from './shared';
+import { Art, C, CtaNote, DiscountBadge, PriceAnchor } from './shared';
 
 /* ══ 0 · Announcement strip (R10) ══════════════════════════════════════════
    A slim navy strip with one live coral dot and a slow shine, so it reads as
@@ -155,7 +154,9 @@ export function AnnouncementBar() {
 export function SiteHeader() {
   return (
     <div className="mx-auto flex max-w-[1180px] items-center justify-center px-5 pb-2 pt-6 sm:justify-start md:px-8">
-      <BrandMark height={44} onDark priority />
+      {/* The navy-ink wordmark, not the gold-on-dark one: the stage is cream
+          now and the light lockup would disappear into it. */}
+      <BrandMark height={44} priority />
     </div>
   );
 }
@@ -168,80 +169,43 @@ const HERO_FACTS = [
   { icon: VideoCamera, text: 'Live, Coach-Led Sessions' },
 ];
 
-/* ══ 1a · The credential card ══════════════════════════════════════════════
+/* ══ 1a · The offer-card art ═══════════════════════════════════════════════
  *
- * This slot held the "system stack" graphic: a flat image of everything
- * included, carrying its whole message as text baked into pixels. Three things
- * were wrong with that at the top of the page. The text resampled soft on a
- * phone, none of it was selectable or searchable, and — the real cost — the
- * first object under the H1 was a picture of a bundle rather than the person
- * running it. The reader's first question on a page like this is who is
- * teaching, and it was being answered four screens down.
+ * The system-stack graphic, restored at Atul's request. It replaced a
+ * credential card (spec PRIORITY 3) that was built in HTML and CSS from the
+ * supplied portrait; that version is in git history if it is ever wanted back.
  *
- * So: the same slot, built in HTML and CSS, saying who she is. (Spec
- * PRIORITY 3.)
+ * The first version of this asset named five days that were not the five days
+ * being run — it still carried "Face Yoga & De-Puffing" and "Nutrition &
+ * Integration", which spec PRIORITY 2 existed to remove. The file here now is
+ * the re-cut, and its cards match DAYS in below-fold.tsx exactly: Sleep Reset
+ * with Prerna, Mat Pilates for Pain & Stiffness, Mat Pilates for Strength &
+ * Mobility, Hatha Yoga for Stress & Anxiety, Breathwork for Hormonal Balance.
+ * If the running order ever changes again, this image changes with it — it is
+ * the one asset on the page that spells the schedule out in pixels, and no
+ * amount of copy nearby can correct it.
  *
- * The photograph is the SUPPLIED portrait and nothing else. No generated or
- * illustrated likeness, per the spec — it is a real person's face and the only
- * acceptable source for it is the one Kaizen sent.
+ * ⚠️ ONE THING IS STILL BAKED IN: the seal reads a hard "₹497". Every other
+ * figure on the site comes from NEXT_PUBLIC_PRICE_RUPEES, so changing the price
+ * moves all of them except this one, and the hero would then show two prices at
+ * once — the struck/live pair in the card, and ₹497 in the art above it. Re-cut
+ * the graphic in the same pass as any price change.
+ *
+ * ratio matches the asset's own 2752x1536. It was 3 / 2 for the previous cut,
+ * and leaving it there would have cropped about 8% off each side with
+ * object-cover — enough to clip the wordmark on the left and the price seal on
+ * the right. See the note on Art in shared.tsx.
  */
-function CredentialCard() {
+function OfferArt() {
   return (
-    <div
-      className="mb-6 flex items-center gap-4 rounded-2xl p-4 text-left sm:gap-5 sm:p-5"
-      style={{
-        background: `linear-gradient(150deg, ${C.goldWash} 0%, ${C.canvas} 70%)`,
-        border: `1px solid ${C.line}`,
-      }}
-    >
-      {/* Fixed pixel box, not a fill-parent: the photo is a known size here and
-          a circle that resizes with the column crops the face differently at
-          every breakpoint. object-top keeps her eyes in frame on the square
-          crop rather than centring on the collarbone. */}
-      <span
-        className="relative block h-[78px] w-[78px] shrink-0 overflow-hidden rounded-full sm:h-[88px] sm:w-[88px]"
-        style={{ boxShadow: `0 0 0 3px ${C.canvas}, 0 0 0 4px ${C.goldMid}` }}
-      >
-        <Image
-          src={asset('/images/prerna-portrait.jpg')}
-          alt="Prerna Khetrapal, founder of Kaizen Goa"
-          fill
-          sizes="88px"
-          priority
-          className="object-cover object-top"
-        />
-      </span>
-
-      <div className="min-w-0">
-        <p
-          className="text-[10px] font-bold uppercase tracking-[0.16em]"
-          style={{ color: C.goldInk }}
-        >
-          Led by
-        </p>
-        <p
-          className="mt-1 font-display text-[19px] font-semibold leading-tight sm:text-[21px]"
-          style={{ color: C.ink }}
-        >
-          Prerna Khetrapal
-        </p>
-        <p className="mt-1 text-[12.5px] leading-snug" style={{ color: C.inkSoft }}>
-          Founder, Kaizen Goa · MBA, ISB Hyderabad
-        </p>
-        <p className="mt-1.5 text-[12.5px] leading-snug" style={{ color: C.inkSoft }}>
-          <span className="font-bold" style={{ color: C.coralInk }}>
-            {WOMEN_SUPPORTED}
-          </span>{' '}
-          women supported through perimenopause and menopause
-        </p>
-        <p
-          className="mt-2.5 border-t pt-2.5 text-[12px] font-semibold leading-snug"
-          style={{ borderColor: C.line, color: C.ink }}
-        >
-          Live on Zoom · {SESSION_TIMES_PROSE} · {PRICE}
-        </p>
-      </div>
-    </div>
+    <Art
+      src={asset('/images/system-stack.png')}
+      alt="Everything included: Prerna, the live Zoom sessions, the Kaizen community, the guides, the five day cards and the guided audio"
+      ratio="2752 / 1536"
+      sizes="(min-width: 1024px) 420px, 100vw"
+      priority
+      className="mb-6"
+    />
   );
 }
 
@@ -262,46 +226,74 @@ export function Hero() {
               <span
                 className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em]"
                 style={{
-                  background: 'rgba(242,221,182,0.10)',
-                  border: '1px solid rgba(242,221,182,0.28)',
-                  color: C.gold,
+                  background: C.goldPale,
+                  border: `1px solid ${C.line}`,
+                  color: C.goldInk,
                 }}
               >
                 <span
                   className="lego-pulse-dot inline-block h-2 w-2 shrink-0 rounded-full"
                   style={{
                     background: C.coral,
-                    ['--dot-pulse' as string]: 'rgba(238,119,120,0.6)',
+                    ['--dot-pulse' as string]: 'rgba(238,119,120,0.5)',
                   }}
                 />
                 For Women Navigating Perimenopause &amp; Menopause · 5-Day Reset
               </span>
-              <DiscountBadge onDark />
+              <DiscountBadge />
             </div>
 
             {/* ONE lit token in the headline: the number that carries the
-                promise. Everything else stays warm white, which is what stops
-                the line reading as a highlighter pass. (C2/C3) */}
+                promise. goldDeep, not gold — gold is the on-navy highlight and
+                would be nearly invisible now the stage is cream. goldDeep
+                clears the 3:1 large-text bar, and this line is large text
+                everywhere it renders. (C2/C3) */}
             <h1
               className="mt-7 font-display text-[34px] font-semibold leading-[1.1] sm:text-[44px] lg:text-[54px]"
-              style={{ color: C.onDark }}
+              style={{ color: C.ink }}
             >
               Reduce Pain &amp; Stiffness by{' '}
-              <span style={{ color: C.gold }}>Up to 30%</span>, Sleep Better
+              <span style={{ color: C.goldDeep }}>Up to 30%</span>, Sleep Better
               &amp; Feel in Control of Your Body Again in Just 5 Days
             </h1>
 
-            {/* A mobile-only image used to sit here, to give the phone hero
-                something to look at above the offer card. It is gone because
-                the card's own art is now the offer-stack shot, which lands
-                immediately below on exactly this breakpoint: two large images
-                back to back read as a repeat, and the stack shot is the
-                stronger of the two. If a distinct hero still is ever supplied,
-                this is where it goes. */}
+            {/* ══ The coaches banner — PHONES ONLY ═══════════════════════
+                Supplied art, sitting directly under the headline exactly as
+                the reference sets it. It is the only place on the page the
+                three coaches appear together, and on a phone the offer card
+                is still a screen away at this point, so the hero had nothing
+                to look at between the H1 and a wall of body copy.
+
+                sm:hidden, so it never reaches the desktop layout: from lg the
+                offer card is already sitting beside the headline doing this
+                job, and a second full-width image there would be two hero
+                shots competing.
+
+                ⚠️ The banner has "₹497" and "6:30 AM and 7 PM" baked into it.
+                Those are env-driven everywhere else on the site now, so if
+                NEXT_PUBLIC_PRICE_RUPEES or NEXT_PUBLIC_SESSION_TIMES change,
+                this artwork has to be re-cut or it will contradict the copy
+                directly beneath it. */}
+            {/* NO `priority`. It is tempting — the banner is above the fold on
+                the phones that see it — but priority emits a <link rel=preload>
+                in the document head, and the head has no idea about sm:hidden.
+                Every DESKTOP visitor was being made to preload 308KB of an
+                image their layout never renders. Without it the fetch starts a
+                beat later on mobile and not at all on desktop, which is the
+                right trade for an element only one breakpoint can see. */}
+            <div className="mt-7 sm:hidden">
+              <Art
+                src={asset('/banner image/kaizen.png')}
+                alt="The experts behind your 5-Day Reset: Prerna and the certified Kaizen coaches. 540+ women supported, Business Goa Awards Corporate Excellence 2024, certified coaches across Pilates, yoga, mindfulness and breathwork."
+                ratio="1672 / 941"
+                sizes="(min-width: 640px) 1px, 100vw"
+                className="rounded-2xl"
+              />
+            </div>
 
             <p
               className="mx-auto mt-6 max-w-[600px] text-[16px] leading-[1.7] lg:mx-0"
-              style={{ color: C.onDarkMute }}
+              style={{ color: C.inkSoft }}
             >
               Experience five days of expert-led Pilates, yoga, mindfulness
               &amp; breathwork designed to ease common (peri)menopause symptoms
@@ -314,22 +306,27 @@ export function Hero() {
                 should know what the number is worth BEFORE they read the price
                 welded into the CTA label. (Spec BLOCKER 2.) */}
             <div className="mt-8 flex justify-center lg:justify-start">
-              <PriceAnchor size="md" onDark align="center" className="lg:items-start" />
+              <PriceAnchor size="md" align="center" className="lg:items-start" />
             </div>
 
             <div className="mt-7 flex justify-center lg:justify-start">
-              {/* Shimmer, but no breath: the offer card beside it is the page's
+              {/* Navy now, not gold. A gold fill was the right call against the
+                  navy stage; on cream it is a pale button on a pale ground and
+                  the page's primary action stops looking like one. Navy is the
+                  house fill for a CTA on light — see PrimaryCTA's default tone.
+
+                  Shimmer, but no breath: the offer card beside it is the page's
                   focal action and carries the one breathing CTA. Two breathing
                   buttons on one screen is two primaries, which is none. */}
               <Link
-                href={CHECKOUT_HREF}
+                href={OTO_HREF}
                 data-cta
                 className="lego-press cta-shimmer group inline-flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-full px-8 font-body text-[15.5px] font-bold sm:w-auto"
                 style={{
-                  background: C.ctaGold,
-                  color: C.ink,
-                  boxShadow: '0 16px 34px -16px rgba(0,0,0,0.55)',
-                  ['--shimmer' as string]: 'rgba(255,255,255,0.55)',
+                  background: C.ink,
+                  color: C.canvas,
+                  boxShadow: '0 16px 34px -16px rgba(31,50,92,0.5)',
+                  ['--shimmer' as string]: 'rgba(242,221,182,0.30)',
                 }}
               >
                 <span className="inline-flex items-center gap-2.5">
@@ -343,14 +340,17 @@ export function Hero() {
             </div>
 
             {/* Welded to the button, never floated away from it. */}
-            <CtaNote onDark className="mt-4 lg:justify-start" />
+            <CtaNote className="mt-4 lg:justify-start" />
 
-            {/* The three facts, on a hairline rule rather than in boxes. */}
+            {/* The three facts, on a hairline rule rather than in boxes. The
+                1px `gap` shows the container through as the rule, so the
+                container colour IS the rule colour — C.line now that the tiles
+                are cream rather than translucent navy. */}
             <ul
               className="mt-9 flex flex-col items-stretch gap-px overflow-hidden rounded-2xl sm:flex-row"
               style={{
-                background: 'rgba(242,221,182,0.16)',
-                border: '1px solid rgba(242,221,182,0.16)',
+                background: C.line,
+                border: `1px solid ${C.line}`,
               }}
             >
               {HERO_FACTS.map(({ icon: Icon, text }, idx) => (
@@ -360,11 +360,11 @@ export function Hero() {
                   className="flex flex-1 items-center justify-center gap-2.5 px-4 py-3.5 text-[13px] font-semibold"
                   style={{
                     ...legoDelay(idx, 90),
-                    background: 'rgba(21,35,66,0.86)',
-                    color: C.onDark,
+                    background: C.canvas,
+                    color: C.ink,
                   }}
                 >
-                  <Icon weight="bold" className="h-4 w-4 shrink-0" style={{ color: C.gold }} />
+                  <Icon weight="bold" className="h-4 w-4 shrink-0" style={{ color: C.goldInk }} />
                   {text}
                 </li>
               ))}
@@ -372,11 +372,11 @@ export function Hero() {
           </div>
 
           {/* ══ RIGHT — the offer card ════════════════════════════════════
-              The page's single focal object. There is no video and no
-              photography yet, so the offer itself is what catches the light:
-              a cream card on the navy stage, with a local ink re-theme (C12).
-              When a founder clip or a system image lands, it slots in above
-              the eyebrow and nothing else has to change. */}
+              The page's single focal object. The stage around it is cream now,
+              so the card can no longer rely on light-against-dark to separate
+              itself: it holds its edge with a pure-canvas fill against the
+              stage's warmer gradient, a firmer hairline and a navy-tinted
+              shadow instead of a black one. */}
           <div>
             <div
               data-lego=""
@@ -390,12 +390,13 @@ export function Hero() {
                 background: C.canvas,
                 border: `1px solid ${C.lineStrong}`,
                 boxShadow:
-                  '0 0 0 8px rgba(242,221,182,0.07), 0 34px 70px -30px rgba(0,0,0,0.6)',
+                  '0 0 0 8px rgba(255,253,248,0.6), 0 30px 64px -30px rgba(31,50,92,0.38)',
               }}
             >
-              {/* Was the system-stack graphic. It is now a credential card in
-                  HTML and CSS — see CredentialCard below for why. */}
-              <CredentialCard />
+              {/* The system-stack graphic. See OfferArt above — it carries
+                  the wrong five day names, the wrong start time and a
+                  hard-coded price. */}
+              <OfferArt />
 
               <span
                 className="inline-flex items-center rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.18em]"
@@ -432,7 +433,7 @@ export function Hero() {
 
               {/* THE breathing CTA. The only one on the page. */}
               <Link
-                href={CHECKOUT_HREF}
+                href={OTO_HREF}
                 data-cta
                 className="lego-press cta-shimmer cta-breath group mt-6 inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-2xl font-body text-[15.5px] font-bold"
                 style={{
@@ -442,7 +443,7 @@ export function Hero() {
                 }}
               >
                 <span className="inline-flex items-center gap-2.5">
-                  Reserve My Spot
+                  {CTA_LABEL_CARD}
                   <ArrowRight
                     weight="bold"
                     className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"

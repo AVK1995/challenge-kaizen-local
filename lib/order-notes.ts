@@ -30,6 +30,10 @@
 /** The machine-readable half of the order, carried in `x0`..`x9`. */
 export type OrderContext = {
   createdAt: string; // ISO 8601, stamped when the order was created
+  /** 'standard' | 'vip' — which pass was bought. Fulfilment depends on it: a VIP
+   *  buyer is owed four things a base buyer is not, so this is the one field
+   *  here whose loss would send someone the wrong product. */
+  tier: string;
   firstName: string;
   lastName: string;
   city: string;
@@ -53,6 +57,7 @@ export type OrderContext = {
 
 export const EMPTY_CONTEXT: OrderContext = {
   createdAt: '',
+  tier: '',
   firstName: '',
   lastName: '',
   city: '',
@@ -101,6 +106,7 @@ const OTHER_CAPS: Partial<Record<keyof OrderContext, number>> = {
   city: 80,
   country: 2,
   occupation: 32,
+  tier: 8,
   externalId: 64,
   fbc: 255,
   fbp: 128,

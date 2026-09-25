@@ -339,14 +339,28 @@ button {
  *  Two gold blooms and one coral bloom over a navy floor ramp, with a faint
  *  dot grid masked to nothing at the edges so it never ends on a hard line.
  * ═══════════════════════════════════════════════════════════════════════ */
+/* ══ The hero stage ═══════════════════════════════════════════════════════
+ *
+ * LIGHT, at Atul's request. It ran as the page's one dark band — a navy
+ * gradient with a gold dot field — and everything above the seam was set in
+ * cream-on-navy to suit it.
+ *
+ * The structure is unchanged, only the values: the same three radial washes in
+ * the same positions, the same dot grid at the same 26px pitch, the same
+ * masking. Warm cream rather than white, so the stage still separates from the
+ * #FFFDF8 canvas below it without turning into a second white.
+ *
+ * The dots flip from gold-on-navy to a faint navy ink, because a light dot on a
+ * light ground is invisible. Same texture, opposite polarity.
+ */
 .kz-stage {
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(ellipse 62% 52% at 18% 6%, rgba(242, 221, 182, 0.17), transparent 62%),
-    radial-gradient(ellipse 54% 46% at 88% 24%, rgba(242, 221, 182, 0.1), transparent 64%),
-    radial-gradient(ellipse 46% 40% at 62% 96%, rgba(238, 119, 120, 0.12), transparent 66%),
-    linear-gradient(178deg, #1b2c53 0%, #16264a 58%, #131f3d 100%);
+    radial-gradient(ellipse 62% 52% at 18% 6%, rgba(242, 221, 182, 0.55), transparent 62%),
+    radial-gradient(ellipse 54% 46% at 88% 24%, rgba(242, 221, 182, 0.38), transparent 64%),
+    radial-gradient(ellipse 46% 40% at 62% 96%, rgba(238, 119, 120, 0.13), transparent 66%),
+    linear-gradient(178deg, #fffdf8 0%, #fbf5ea 58%, #f7f0e3 100%);
 }
 .kz-stage > * { position: relative; z-index: 2; }
 .kz-stage::after {
@@ -354,17 +368,18 @@ button {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background-image: radial-gradient(rgba(242, 221, 182, 0.16) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(31, 50, 92, 0.1) 1px, transparent 1px);
   background-size: 26px 26px;
   -webkit-mask-image: radial-gradient(ellipse 74% 62% at 50% 42%, #000 0%, transparent 78%);
   mask-image: radial-gradient(ellipse 74% 62% at 50% 42%, #000 0%, transparent 78%);
-  opacity: 0.5;
+  opacity: 0.55;
   pointer-events: none;
 }
-/* The seam where the dark stage hands over to the cream page. */
+/* The seam where the stage hands over to the cream page. Gold reads on both,
+   so this one value survived the flip unchanged. */
 .kz-stage-seam {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(217, 181, 113, 0.55), transparent);
+  background: linear-gradient(90deg, transparent, rgba(217, 181, 113, 0.75), transparent);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
