@@ -2,6 +2,7 @@ import crypto from 'crypto';
 
 import { NextResponse } from 'next/server';
 
+import { resolveTier } from '@/app/_landing/offer';
 import { CHECKOUT_CONFIG, isTestMode } from '@/lib/checkout-config';
 import { packContext } from '@/lib/order-notes';
 import { readClientIp, readClientUserAgent } from '@/lib/request-signals';
@@ -64,6 +65,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: 'missing-fields' }, { status: 400 });
   }
 
+  /* ══ THE AMOUNT IS DECIDED HERE, NOT BY THE CALLER ═══════════════════════
+     The browser sends a tier ID and nothing else about money. This resolves it
+     against the server's own tier table and charges what IT finds, so the
+     worst a tampered request can do is select the other real pass — it cannot
+     name its own price. An `amount` field in the body would be a price the
+     buyer can edit; there is deliberately no such field, and adding one later
+     would reopen exactly that hole.
+
+     An unrecognised or missing tier resolves to base rather than failing: a
+     buyer who somehow arrives without one still gets charged for something
+     real, and the tier is recorded in the notes either way so a mismatch is
+     visible afterwards. */
+  const tier = resolveTier(typeof body.tier === 'string' ? body.tier : null);
+
   const utm = (body.utm ?? {}) as Record<string, string | undefined>;
 
   /* Identity and timestamp for the fulfilment record. Generated HERE, not in
@@ -82,13 +97,23 @@ export async function POST(req: Request) {
      Nothing further can be added at this level; new fields go into the packed
      context instead, which has headroom. */
   const notes: Record<string, string> = {
-    kind: 'kaizen_5day_reset',
+    /* The tier rides in `kind`, which was already a readable key and already
+       said "kaizen_5day_reset". Encoding it here rather than adding a sixth
+       readable key matters: the five readable keys plus ten chunk keys are
+       exactly the 15 Razorpay allows, and a sixteenth REJECTS the order. It is
+       also the field whoever opens the payment in the dashboard reads first. */
+    kind: `kaizen_5day_reset_${tier.id}`,
     lead_id: leadId,
     name: truncate(`${firstName} ${lastName}`.trim()),
     email: truncate(email),
     phone: truncate(phone),
     ...packContext({
       createdAt,
+      /* Also in the packed context, not only in `kind`: the webhook reads the
+         context to build the fulfilment record, and `kind` is a display field
+         that could be reworded. Two copies of one short string is cheap; a
+         webhook that cannot tell which pass was bought is not. */
+      tier: tier.id,
       firstName,
       lastName,
       city,
@@ -126,7 +151,7 @@ export async function POST(req: Request) {
         authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`,
       },
       body: JSON.stringify({
-        amount: CHECKOUT_CONFIG.amountPaise,
+        amount: tier.paise,
         currency: CHECKOUT_CONFIG.currency,
         receipt: `kz_${Date.now()}`,
         notes,
@@ -164,6 +189,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       leadId,
+      /* Echoed back so the checkout can assert the server agreed with it. */
+      tier: tier.id,
       isTest: isTestMode(),
       orderId: order.id,
       amount: order.amount,

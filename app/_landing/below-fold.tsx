@@ -28,7 +28,7 @@ import Close from './close';
 import { legoBrick, legoDelay } from './lego-style';
 import { domAnimation, LazyMotion } from './motion-lite';
 import {
-  CHECKOUT_HREF,
+  OTO_HREF,
   CTA_LABEL,
   SESSION_TIMES,
   SESSION_TIMES_TZ,
@@ -375,7 +375,7 @@ function SessionsBand() {
         <div className="mx-auto mt-8 flex max-w-[430px] flex-col items-center">
           <PriceAnchor size="md" onDark className="mb-6" />
           <Link
-            href={CHECKOUT_HREF}
+            href={OTO_HREF}
             data-cta
             className="lego-press cta-shimmer group inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-full px-7 font-body text-[15px] font-bold"
             style={{
@@ -510,7 +510,7 @@ function InlineCta() {
         <PriceAnchor size="md" className="mb-6" />
 
         <Link
-          href={CHECKOUT_HREF}
+          href={OTO_HREF}
           data-cta
           className="lego-press cta-shimmer group inline-flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-full px-8 font-body text-[15.5px] font-bold"
           style={{
@@ -541,11 +541,19 @@ export default function BelowFold() {
      .bw-js is on the document. */
   return (
     <LazyMotion features={domAnimation}>
+      {/* Proof FIRST, directly under the hero. It used to sit sixth, three
+          screens down, which meant the page asked for ₹497 twice before it
+          showed a single other woman who had done this.
+
+          The order INSIDE it is video clips, then the WhatsApp captures —
+          strongest format first. There are no transformation images in the
+          asset set; if they ever arrive they belong between those two, which
+          is where proof.tsx has the hairline flourish. */}
+      <Proof />
       <Experience />
       <Schedule />
       <SessionsBand />
       <Recognition />
-      <Proof />
       <Toolkit />
       {/* Sits between the last bonus and MEET YOUR GUIDE (the first section
           inside Close). Do not move it inside Toolkit: the section's own

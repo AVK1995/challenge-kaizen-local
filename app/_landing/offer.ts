@@ -144,12 +144,173 @@ export const WOMEN_SUPPORTED = str(process.env.NEXT_PUBLIC_WOMEN_SUPPORTED, '540
  */
 export const WHATSAPP_INVITE = process.env.NEXT_PUBLIC_WHATSAPP_INVITE ?? '';
 
-/** The next click is a payment. Every CTA on the page, including the docked
- *  bar, points here. */
+/* ══ THE TWO TIERS ════════════════════════════════════════════════════════
+ *
+ * The funnel is Ads → Landing → OTO → Checkout → Thank you. The landing page
+ * sells one price; the OTO page is where the buyer chooses between two, and
+ * every screen after it has to agree about which one they picked.
+ *
+ * That agreement is what this block exists for. The tier is carried as an ID
+ * in the URL (?tier=vip), never as an amount: a price in a query string is a
+ * price the buyer can edit. create-order looks the ID up here, server side, and
+ * charges what IT finds — so the worst a tampered URL can do is select the
+ * other real tier, not invent a third.
+ *
+ * BASE keeps the existing PRICE_* exports untouched, because the whole landing
+ * page is built on them and the landing page still sells the base tier.
+ */
+export type TierId = 'standard' | 'vip';
+
+export const VIP_PRICE_RUPEES = num(process.env.NEXT_PUBLIC_VIP_PRICE_RUPEES, 997);
+export const VIP_ANCHOR_RUPEES = num(process.env.NEXT_PUBLIC_VIP_ANCHOR_RUPEES, 2999);
+
+export type Tier = {
+  id: TierId;
+  /** The card heading on the OTO page. */
+  name: string;
+  /** For order summaries, the Razorpay sheet and the fulfilment record, where
+   *  the full name is too long to read. */
+  shortName: string;
+  rupees: number;
+  paise: number;
+  price: string;
+  anchorRupees: number;
+  anchor: string;
+  /** False when the anchor is at or below the price — see HAS_ANCHOR. */
+  hasAnchor: boolean;
+  savingRupees: number;
+  saving: string;
+  discountPct: number;
+};
+
+function makeTier(
+  id: TierId,
+  name: string,
+  shortName: string,
+  rupees: number,
+  anchorRupees: number,
+): Tier {
+  const hasAnchor = anchorRupees > rupees;
+  const savingRupees = Math.max(0, anchorRupees - rupees);
+  return {
+    id,
+    name,
+    shortName,
+    rupees,
+    paise: rupees * 100,
+    price: inr(rupees),
+    anchorRupees,
+    anchor: inr(anchorRupees),
+    hasAnchor,
+    savingRupees,
+    saving: inr(savingRupees),
+    discountPct: hasAnchor ? Math.round((savingRupees / anchorRupees) * 100) : 0,
+  };
+}
+
+export const TIER_BASE = makeTier(
+  'standard',
+  'Kaizen 5-Day (Peri)menopause Reset',
+  '5-Day Reset',
+  PRICE_RUPEES,
+  PRICE_ANCHOR_RUPEES,
+);
+
+export const TIER_VIP = makeTier(
+  'vip',
+  'Kaizen 5-Day (Peri)menopause Reset + VIP Access',
+  '5-Day Reset + VIP',
+  VIP_PRICE_RUPEES,
+  VIP_ANCHOR_RUPEES,
+);
+
+/** Cheapest first — the OTO renders them in this order and the base tier is
+ *  the one selected on arrival. */
+export const TIERS: Tier[] = [TIER_BASE, TIER_VIP];
+
+export const DEFAULT_TIER_ID: TierId = 'standard';
+
+/**
+ * Resolve an untrusted string to a real tier.
+ *
+ * Anything unrecognised — absent, misspelt, injected — falls back to base
+ * rather than throwing or charging nothing. Used by the checkout to read the
+ * query string and by create-order to decide the amount, so the two can never
+ * disagree about what a given URL means.
+ */
+export function resolveTier(raw: string | null | undefined): Tier {
+  return TIERS.find((t) => t.id === raw) ?? TIER_BASE;
+}
+
+/**
+ * The OTO's price-rise notice, e.g. "₹497 until Friday 3rd October".
+ *
+ * ⚠️ OPTIONAL, AND OFF BY DEFAULT. The source copy carries "₹497 until
+ * [deadline day and date] · then ₹997" with the bracket left unfilled. Two
+ * reasons it does not ship as written:
+ *
+ *   1. A placeholder in square brackets on a live sales page is worse than no
+ *      line at all.
+ *   2. This page has been here before. The announcement bar ran "Price
+ *      Increases To ₹1599 Tomorrow" unchanged for weeks while the price never
+ *      moved, which is what spec BLOCKER 2 was written to stop. An undated
+ *      deadline teaches the reader to discount every other claim on the page.
+ *
+ * Set NEXT_PUBLIC_OTO_DEADLINE to a real date ("Friday 3rd October") and the
+ * line appears. Leave it blank and the OTO simply does not make the claim.
+ * If it is set, the price must actually rise on that date.
+ */
+export const OTO_DEADLINE = (process.env.NEXT_PUBLIC_OTO_DEADLINE ?? '').trim();
+
+/** The next click after the landing page: choose a pass. Nothing is charged
+ *  there — the OTO's own CTA is what reaches the checkout. */
+export const OTO_HREF = '/oto';
+
+/** The payment page. Takes ?tier= so it knows which pass to charge for. */
 export const CHECKOUT_HREF = '/checkout';
 
-/** The CTA label, as written in the source copy. */
+/** Where a completed payment lands, per tier. */
+export const THANK_YOU_HREF: Record<TierId, string> = {
+  standard: '/thank-you',
+  vip: '/thank-you-vip',
+};
+
+/* ══ CTA labels. THREE, and only three. ═══════════════════════════════════
+ *
+ * Every button on the landing page uses one of these, so a price change moves
+ * all of them and no screen can invent its own wording. They were drifting —
+ * the decision card said "Take Action · ₹497" and the docked bar repeated the
+ * hero's label, which made the page look like it was selling three things.
+ *
+ *   CTA_LABEL         the default. Hero, session band, inline CTA, recap.
+ *   CTA_LABEL_CARD    the offer card under the system image. No price: the
+ *                     card states it in full two lines above the button, and
+ *                     repeating it there reads as two prices.
+ *   CTA_LABEL_STICKY  the docked bar.
+ *
+ * The separator is "·" (U+00B7), which is what every other dot on this site
+ * uses — the facts row, the footer, the order summary, the announcement bar.
+ * Say the word if you want the heavier "•" (U+2022) and it changes here once.
+ */
 export const CTA_LABEL = `Start Your 5-Day Reset · ${PRICE}`;
+export const CTA_LABEL_CARD = 'Reserve My Spot';
+export const CTA_LABEL_STICKY = `Get Instant Access · ${PRICE}`;
+
+/**
+ * The docked bar's reassurance line.
+ *
+ * ⚠️ This is NOT the refund line. It is the "100% Money-Back Guarantee"
+ * wording, restored in the docked bar only, at Atul's request. Spec BLOCKER 4
+ * had collapsed three competing phrasings — this one, "Full Refund If You
+ * Don't Love Day One" and "Refundable If You Don't Love Day One" — into the
+ * single REFUND_LINE below, so the page made one promise rather than three.
+ *
+ * The page body still uses REFUND_LINE at all seven CTAs; only the docked bar
+ * carries this. That is a deliberate exception, not drift, but it does mean a
+ * reader who scrolls sees two wordings of the same promise. Flagged rather
+ * than silently reconciled.
+ */
+export const GUARANTEE_LINE = '100% Money-Back Guarantee';
 
 /**
  * THE refund line. One string, one casing, everywhere it appears.

@@ -20,22 +20,12 @@
  * can already see is two primaries, which is none. That is a hide, not a
  * reveal, so it costs nothing at load.
  */
-import { ArrowRight, CalendarBlank, Clock } from '@phosphor-icons/react/dist/ssr';
+import { ArrowRight, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import {
-  CHECKOUT_HREF,
-  CTA_LABEL,
-  DISCOUNT_SHORT,
-  HAS_ANCHOR,
-  PRICE,
-  PRICE_ANCHOR,
-  SAVING,
-  SESSION_TIMES,
-  START_DATE,
-} from './offer';
-import { C, CtaNote } from './shared';
+import { OTO_HREF, CTA_LABEL_STICKY, GUARANTEE_LINE, START_DATE } from './offer';
+import { C } from './shared';
 
 export default function StickyCta() {
   /* TRUE, not false. This is what puts the bar in the server-rendered HTML and
@@ -43,30 +33,48 @@ export default function StickyCta() {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
-    const final = document.querySelector('[data-final]');
-    if (!final) return;
+    /* TWO elements, not one: the closing recap AND the footer.
+       The recap alone was not enough. It hid the bar correctly while the recap
+       was on screen, but `!isIntersecting` turns back to `true` the moment the
+       recap scrolls off the TOP — so the bar reappeared for the whole footer
+       and sat permanently over the operator address, the contact details and
+       the policy links at the very bottom of the page.
+       Watching both means the bar is hidden continuously from the recap to the
+       end of the document, which is the behaviour the recap gate was always
+       meant to describe. */
+    const targets = Array.from(
+      document.querySelectorAll('[data-final], [data-site-footer]'),
+    );
+    if (!targets.length) return;
 
-    /* Only the closing recap is observed now. The hero is not, because the bar
-       no longer waits for it. */
+    /* A Set rather than a boolean per target: with two observed elements the
+       bar must stay hidden while EITHER is visible, and entries arrive one at
+       a time. Tracking which ones are currently on screen is the only way to
+       answer that without the second callback undoing the first. */
+    const visible = new Set<Element>();
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (e.target === final) setShow(!e.isIntersecting);
+          if (e.isIntersecting) visible.add(e.target);
+          else visible.delete(e.target);
         }
+        setShow(visible.size === 0);
       },
       { threshold: 0 },
     );
 
-    io.observe(final);
+    targets.forEach((t) => io.observe(t));
     return () => io.disconnect();
   }, []);
 
   return (
     <>
-      {/* No spacer. The bar hides once the final CTA is in view (see atFinal
-          above), so it is never on screen at the foot of the page and there is
-          nothing to reserve room for. A spacer here rendered as dead space
-          below the footer, which is exactly where it was most visible. */}
+      {/* No spacer, and none needed: the bar is hidden from the recap all the
+          way to the end of the document (see the observer above), so it is
+          never on screen at the foot of the page and there is nothing to
+          reserve room for. A spacer here rendered as dead space below the
+          footer, which is exactly where it was most visible. */}
       {/* No kz-dock, and no transition on the way IN — the bar is simply there.
           The fade is kept only for the way out, when the closing recap arrives,
           because that one is a genuine change of state mid-scroll rather than
@@ -94,122 +102,64 @@ export default function StickyCta() {
           }}
         />
 
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-4 py-3 sm:px-8">
-          <div className="min-w-0">
-            {/* The anchor rides in the bar too. It is the one price point a
-                reader sees for most of the page, so leaving it as a bare ₹497
-                was the largest single gap BLOCKER 2 named.
+        {/* ══ Two things only: the reassurance line, and the button ════════
+            Stripped back to the reference layout. It previously carried the
+            product name, the struck anchor, the live price, a discount chip,
+            the saving, the start date, the session times AND the refund line —
+            eight pieces of information fighting one button for a 60px strip.
 
-                The price is on its OWN line, not appended to the title. It was
-                tried inline and the title's `truncate` ate it at 390px: the bar
-                showed "5-Day (Peri)Menopa…" and no price at all, which is the
-                one width where it matters most. The title may truncate — it is
-                the least load-bearing thing in the bar — but the price never
-                can, because nothing shares its line. */}
-            <p
-              className="truncate font-display text-[15px] font-semibold leading-tight sm:text-[16.5px]"
-              style={{ color: C.ink }}
-            >
-              5-Day (Peri)Menopause Reset
-            </p>
+            Phone   line 1  refund · start date   (centred)
+                    line 2  the CTA, full width
+            Desktop refund · start date   LEFT        the CTA   RIGHT
 
-            {/* flex-wrap, so a narrow phone drops the saving to its own line
-                rather than clipping it. */}
-            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 leading-tight">
-              {HAS_ANCHOR && (
-                <s
-                  className="text-[12.5px] tabular-nums decoration-[1.5px]"
-                  style={{ color: C.inkSoft, textDecorationColor: C.coralInk }}
-                >
-                  <span className="sr-only">Was </span>
-                  {PRICE_ANCHOR}
-                </s>
-              )}
-              <span
-                className="font-display text-[17px] font-semibold tabular-nums sm:text-[18px]"
-                style={{ color: C.goldDeep }}
-              >
-                {HAS_ANCHOR && <span className="sr-only">Now </span>}
-                {PRICE}
-              </span>
+            Everything that is gone is still on the page: the anchor and the
+            saving sit at all seven CTAs, the times run in the hero facts row
+            and the session band. The docked bar does not need to repeat them,
+            and repeating them is what made it unreadable. */}
+        <div className="mx-auto flex max-w-[1180px] flex-col items-center gap-2.5 px-4 py-3 sm:flex-row sm:justify-between sm:gap-6 sm:px-8">
+          {/* "100% Money-Back Guarantee · Starts 25th September", on ONE line.
+              It fits at 390px where the refund sentence did not — that is the
+              practical reason this bar can carry the whole line on a phone now
+              and the previous wording had to be shortened to "Full refund".
 
-              {HAS_ANCHOR && (
-                <>
-                  {/* The discount, as a SOLID coral chip rather than the tail of
-                      a sentence. In the docked bar this is the only piece of
-                      copy competing with a navy button for attention, and as
-                      11px coral text on cream it lost every time — it read as a
-                      footnote to the price rather than as the reason to act.
-                      A filled chip at the same size holds its own beside the
-                      button without needing to grow. */}
-                  <span
-                    className="inline-flex shrink-0 items-center rounded-md px-1.5 py-[3px] text-[11px] font-extrabold uppercase tracking-[0.04em] sm:text-[11.5px]"
-                    style={{ background: C.coralInk, color: '#FFF7F5' }}
-                  >
-                    {DISCOUNT_SHORT}
-                  </span>
-                  {/* The rupee figure stays, but quieter: the chip carries the
-                      headline and this backs it up. Hidden on the narrowest
-                      phones, where the chip alone does the job. */}
-                  <span
-                    className="hidden text-[11px] font-semibold min-[400px]:inline sm:text-[11.5px]"
-                    style={{ color: C.coralInk }}
-                  >
-                    Save {SAVING}
-                  </span>
-                </>
-              )}
-            </p>
+              See GUARANTEE_LINE in offer.ts: this is the one place on the site
+              that does not use REFUND_LINE, deliberately. */}
+          <p
+            className="flex items-center justify-center gap-x-1.5 whitespace-nowrap text-center text-[12.5px] font-medium sm:text-[13.5px]"
+            style={{ color: C.inkSoft }}
+          >
+            <ShieldCheck
+              weight="fill"
+              className="h-3.5 w-3.5 shrink-0"
+              style={{ color: C.coralInk }}
+            />
+            {GUARANTEE_LINE}
+            <span aria-hidden style={{ color: C.lineStrong }}>
+              ·
+            </span>
+            <span className="font-semibold" style={{ color: C.ink }}>
+              Starts {START_DATE}
+            </span>
+          </p>
 
-            <p
-              className="mt-0.5 hidden items-center gap-3 truncate text-[11.5px] sm:flex sm:text-[12px]"
-              style={{ color: C.inkSoft }}
-            >
-              <span className="inline-flex shrink-0 items-center gap-1.5">
-                <CalendarBlank weight="bold" className="h-3 w-3" style={{ color: C.goldInk }} />
-                Starts {START_DATE}
-              </span>
-              <span className="inline-flex shrink-0 items-center gap-1.5">
-                <Clock weight="bold" className="h-3 w-3" style={{ color: C.coralInk }} />
-                {SESSION_TIMES}
-              </span>
-            </p>
-          </div>
-
-          {/* The button and its reassurance, stacked — the refund promise sits
-              under EVERY other CTA on the site and this was the one that had
-              none, which made the docked bar the only place a reader could act
-              without being told they could change their mind. It is welded to
-              the button in the same column so the two can never be separated by
-              a wrap. */}
-          <div className="flex shrink-0 flex-col items-center gap-1">
-            <Link
-              href={CHECKOUT_HREF}
-              data-cta
-              className="lego-press cta-shimmer group inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full px-5 text-[14px] font-bold sm:px-7 sm:text-[15px]"
-              style={{
-                background: C.ink,
-                color: C.canvas,
-                ['--shimmer' as string]: 'rgba(242,221,182,0.30)',
-              }}
-            >
-              <span className="inline-flex items-center gap-2">
-                <span className="sm:hidden">Reserve My Spot</span>
-                <span className="hidden sm:inline">{CTA_LABEL}</span>
-                <ArrowRight
-                  weight="bold"
-                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                />
-              </span>
-            </Link>
-
-            {/* size="sm" and the short form on phones: the full sentence under a
-                170px-wide button wraps to three lines and turns the bar into a
-                block. The shield is the same glyph as everywhere else, so the
-                promise is recognisable even where the words are shortened. */}
-            <CtaNote size="sm" className="sm:hidden" text="Full refund" />
-            <CtaNote size="sm" className="hidden sm:flex" />
-          </div>
+          <Link
+            href={OTO_HREF}
+            data-cta
+            className="lego-press cta-shimmer group inline-flex min-h-[48px] w-full shrink-0 items-center justify-center gap-2 rounded-full px-5 text-[14px] font-bold sm:w-auto sm:px-7 sm:text-[15px]"
+            style={{
+              background: C.ink,
+              color: C.canvas,
+              ['--shimmer' as string]: 'rgba(242,221,182,0.30)',
+            }}
+          >
+            <span className="inline-flex items-center gap-2">
+              {CTA_LABEL_STICKY}
+              <ArrowRight
+                weight="bold"
+                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+              />
+            </span>
+          </Link>
         </div>
       </div>
     </>

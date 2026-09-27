@@ -23,7 +23,16 @@ import { C } from '@/app/_landing/shared';
  */
 export default function SiteFooter({ children }: { children?: React.ReactNode }) {
   return (
-    <footer className="px-4 py-10 sm:px-6 sm:py-12" style={{ background: C.navyDeep }}>
+    /* data-site-footer is read by the landing page's docked CTA, which hides
+       itself once this is on screen. Without it the bar sits permanently over
+       the operator identity and the policy links — the three things Razorpay's
+       merchant review looks for, and the ones a buyer needs to find a refund
+       policy. See app/_landing/sticky-cta.tsx. */
+    <footer
+      data-site-footer
+      className="px-4 py-10 sm:px-6 sm:py-12"
+      style={{ background: C.navyDeep }}
+    >
       <div className="mx-auto max-w-[1180px] text-center">
         {children}
 

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 
 import { NextResponse } from 'next/server';
 
+import { resolveTier } from '@/app/_landing/offer';
 import { CHECKOUT_CONFIG, capiReady, isTestMode } from '@/lib/checkout-config';
 import { ga4ServerReady, sendGa4Purchase } from '@/lib/ga4-server';
 import { sendCapiEvent, type Occupation } from '@/lib/meta-capi';
@@ -61,6 +62,14 @@ export async function POST(req: Request) {
      own headers describe Razorpay. */
   const ctx = unpackContext(notes);
 
+  /* Which pass was bought. The AMOUNT still comes from Razorpay above, not
+     from here — payment.amount is what was actually captured and is the only
+     honest figure for revenue. The tier is what fulfilment needs: a VIP buyer
+     is owed the Symptom Score, the Readiness Check, the Nervous System Reset
+     and the Pranayam guide, and a base buyer is not. Getting this wrong means
+     either short-changing someone who paid double or giving away the upsell. */
+  const tier = resolveTier(ctx.tier);
+
   const country = ctx.country || 'in';
 
   /* Validated against the two known answers rather than passed through: this
@@ -89,8 +98,8 @@ export async function POST(req: Request) {
         transactionId: paymentId,
         valueRupees,
         currency: CHECKOUT_CONFIG.currency,
-        itemId: 'kaizen-5day-reset',
-        itemName: CHECKOUT_CONFIG.contentName,
+        itemId: `kaizen-5day-reset-${tier.id}`,
+        itemName: tier.name,
       })
     : { ok: false, status: 0 };
 
@@ -131,8 +140,12 @@ export async function POST(req: Request) {
         paymentId,
         orderId,
         currency: CHECKOUT_CONFIG.currency,
-        product: CHECKOUT_CONFIG.contentName,
+        /* Names the PASS, not the product family: this is the field the
+           fulfilment automation reads to decide which guides to send. */
+        product: tier.name,
         occupation: ctx.occupation,
+        /* 'standard' | 'vip'. Branch on THIS, not on amount or product. */
+        tier: tier.id,
       })
     : { ok: false, status: 0 };
 
