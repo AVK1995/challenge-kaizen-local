@@ -86,7 +86,7 @@ export const DISCOUNT_BADGE = `${DISCOUNT_PCT}% OFF TODAY`;
 /** When the cohort starts. Written as it is read aloud, not as a date object:
  *  it appears mid-sentence in six places and "2026-09-25" reads as a database
  *  row in every one of them. */
-export const START_DATE = str(process.env.NEXT_PUBLIC_START_DATE, '25th September');
+export const START_DATE = str(process.env.NEXT_PUBLIC_START_DATE, '9th October');
 
 /**
  * The daily timings, in the three forms the site needs.
