@@ -38,7 +38,7 @@ import { asset } from './asset-version';
 import BrandMark from './brand-mark';
 import { legoBrick, legoDelay } from './lego-style';
 import {
-  OTO_HREF,
+  CHECKOUT_HREF,
   CTA_LABEL,
   PRICE,
   REFUND_LINE,
@@ -460,7 +460,7 @@ function TwoOptions() {
           <PriceAnchor size="md" onDark className="mt-7" />
 
           <Link
-            href={OTO_HREF}
+            href={CHECKOUT_HREF}
             data-cta
             className="lego-press cta-shimmer group mt-6 inline-flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-full px-6 font-body text-[15px] font-bold"
             style={{

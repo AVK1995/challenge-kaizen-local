@@ -206,8 +206,8 @@ export default function ThankYouScreen({
                 style={{ color: C.onDark }}
               >
                 You also have{' '}
-                <span style={{ color: C.gold }}>progress tracking</span> and two
-                extra guides.
+                <span style={{ color: C.gold }}>every session recorded</span>,
+                progress tracking and two extra guides.
               </h2>
 
               <ul className="mt-5 flex flex-col gap-3.5">

@@ -24,7 +24,7 @@ import { ArrowRight, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { OTO_HREF, CTA_LABEL_STICKY, GUARANTEE_LINE, START_DATE } from './offer';
+import { CHECKOUT_HREF, CTA_LABEL_STICKY, GUARANTEE_LINE, START_DATE } from './offer';
 import { C } from './shared';
 
 export default function StickyCta() {
@@ -143,7 +143,7 @@ export default function StickyCta() {
           </p>
 
           <Link
-            href={OTO_HREF}
+            href={CHECKOUT_HREF}
             data-cta
             className="lego-press cta-shimmer group inline-flex min-h-[48px] w-full shrink-0 items-center justify-center gap-2 rounded-full px-5 text-[14px] font-bold sm:w-auto sm:px-7 sm:text-[15px]"
             style={{

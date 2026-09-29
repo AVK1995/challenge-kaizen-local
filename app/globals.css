@@ -314,6 +314,90 @@ button {
   0% { transform: translateX(-120%) skewX(-18deg); }
   22%, 100% { transform: translateX(320%) skewX(-18deg); }
 }
+/* ══════════════════════════════════════════════════════════════════════════
+ *  The checkout's VIP upgrade card, BEFORE it is ticked.
+ *
+ *  A slow gold ring that breathes out and fades. It exists because an order
+ *  bump that looks like the rest of the form gets read as part of the form and
+ *  scrolled past — the reader is in "fill this in" mode, not "consider this"
+ *  mode, and nothing about a bordered box interrupts that.
+ *
+ *  2.8s and a soft alpha on purpose: fast enough to catch peripheral vision on
+ *  a page someone is actively reading, slow enough not to read as an error
+ *  state or a flashing advert. It is the only thing moving on the checkout.
+ *
+ *  It STOPS once the box is ticked — the class comes off in the component. A
+ *  nudge that keeps nudging after you have said yes is just noise, and worse,
+ *  it makes a confirmed choice look unconfirmed.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@keyframes kz-nudge {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(217, 181, 113, 0),
+      0 10px 26px -20px rgba(31, 50, 92, 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(217, 181, 113, 0.2),
+      0 16px 34px -18px rgba(31, 50, 92, 0.3);
+  }
+}
+
+/* The wobble: ~0.8s of tilt, then ~1s still, on a 1.8s cycle.
+   The rest matters as much as the movement. Without it the card never settles
+   and reads as broken rather than as a prompt; with a rest, each tilt is a
+   fresh event that catches peripheral vision again. 55% of the cycle is the
+   pause, which at 1.8s is almost exactly the one second asked for.
+   Angles are deliberately under one degree. Past roughly 1.5deg the text
+   inside starts to resample soft during the tilt on some browsers, and a
+   blurry price is a worse problem than a missed upsell. */
+@keyframes kz-wobble {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  61% { transform: rotate(-0.7deg); }
+  68% { transform: rotate(0.7deg); }
+  76% { transform: rotate(-0.45deg); }
+  85% { transform: rotate(0.3deg); }
+  93% { transform: rotate(-0.12deg); }
+}
+
+/* Both live on a WRAPPER, never on the card itself. The card carries
+   .lego-press, which animates `transform` on hover and press — and a keyframe
+   animation on the same property wins the cascade outright, so putting the
+   wobble there would silently kill the hover lift. Two elements, two
+   properties, no fight. */
+/* 3.6s is exactly twice the wobble, so the ring peaks on every second tilt
+   instead of drifting against it. Two loops on unrelated periods read as two
+   things going on; phase-locked, they read as one. */
+.kz-nudge {
+  animation:
+    kz-nudge 3.6s ease-in-out infinite,
+    kz-wobble 1.8s ease-in-out infinite;
+}
+
+/* The docked bar's version: same rhythm, SMALLER angles.
+   A fixed element tilting near the edge of the screen has straight bar edges
+   right beside it to be judged against, so the same 0.7deg that reads as a
+   nudge mid-page reads as a rendering fault down there. Two-thirds of the
+   amplitude keeps the movement while removing the wrongness.
+   It is also inset from the bar's own padding in the component, so the rotated
+   corners never reach the edges — at this size they swing about 2px, and with
+   nothing to clip them the tilt reads as a card moving inside the bar rather
+   than as the bar itself coming loose. */
+@keyframes kz-wobble-sm {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  61% { transform: rotate(-0.45deg); }
+  68% { transform: rotate(0.45deg); }
+  76% { transform: rotate(-0.3deg); }
+  85% { transform: rotate(0.2deg); }
+  93% { transform: rotate(-0.08deg); }
+}
+.kz-nudge-bar {
+  border-radius: 0.75rem;
+  animation:
+    kz-nudge 3.6s ease-in-out infinite,
+    kz-wobble-sm 1.8s ease-in-out infinite;
+}
+
 .cta-shimmer { position: relative; overflow: hidden; isolation: isolate; }
 .cta-shimmer > * { position: relative; z-index: 2; }
 .cta-shimmer::after {
@@ -677,6 +761,8 @@ button {
     opacity: 0 !important;
   }
   .cta-breath,
+  .kz-nudge,
+  .kz-nudge-bar,
   .tl-node.is-on .tl-node-inner { animation: none !important; }
   /* .kz-dock removed with the rule it reset — the docked bar no longer
      animates in for anyone, so reduced motion has nothing to switch off. */

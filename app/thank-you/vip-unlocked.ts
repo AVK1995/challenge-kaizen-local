@@ -12,6 +12,10 @@
  */
 export const VIP_UNLOCKED: { title: string; detail: string }[] = [
   {
+    title: 'Recordings of all 5 days',
+    detail: 'Miss a session and you have not missed the day. Posted in the community.',
+  },
+  {
     title: 'Your (Peri)Menopause Symptom Score',
     detail: 'Score yourself on Day 1, then again on Day 5 and see what moved.',
   },

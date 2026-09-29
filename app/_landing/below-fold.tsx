@@ -28,7 +28,7 @@ import Close from './close';
 import { legoBrick, legoDelay } from './lego-style';
 import { domAnimation, LazyMotion } from './motion-lite';
 import {
-  OTO_HREF,
+  CHECKOUT_HREF,
   CTA_LABEL,
   SESSION_TIMES,
   SESSION_TIMES_TZ,
@@ -181,13 +181,13 @@ const DAYS = [
   },
   {
     n: 'Day 3',
-    title: 'Mat Pilates for Strength & Mobility',
-    body: 'Build strength, improve mobility and develop better support through your body.',
+    title: 'Hatha Yoga for Stress & Anxiety',
+    body: 'Release built-up tension, settle restlessness and create calm in your body and mind.',
   },
   {
     n: 'Day 4',
-    title: 'Hatha Yoga for Stress & Anxiety',
-    body: 'Release built-up tension, settle restlessness and create calm in your body and mind.',
+    title: 'Mat Pilates for Strength & Mobility',
+    body: 'Build strength, improve mobility and develop better support through your body.',
   },
   {
     n: 'Day 5',
@@ -375,7 +375,7 @@ function SessionsBand() {
         <div className="mx-auto mt-8 flex max-w-[430px] flex-col items-center">
           <PriceAnchor size="md" onDark className="mb-6" />
           <Link
-            href={OTO_HREF}
+            href={CHECKOUT_HREF}
             data-cta
             className="lego-press cta-shimmer group inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-full px-7 font-body text-[15px] font-bold"
             style={{
@@ -510,7 +510,7 @@ function InlineCta() {
         <PriceAnchor size="md" className="mb-6" />
 
         <Link
-          href={OTO_HREF}
+          href={CHECKOUT_HREF}
           data-cta
           className="lego-press cta-shimmer group inline-flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-full px-8 font-body text-[15.5px] font-bold"
           style={{

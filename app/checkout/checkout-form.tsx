@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CaretDown,
+  Check,
   CheckCircle,
   CreditCard,
   Lock,
@@ -35,6 +36,9 @@ import {
   SESSION_TIMES_TZ,
   START_DATE,
   THANK_YOU_HREF,
+  TIER_BASE,
+  TIER_VIP,
+  VIP_UPGRADE,
   type Tier,
 } from '../_landing/offer';
 import PaymentLogos from '@/components/PaymentLogos';
@@ -48,7 +52,7 @@ import {
 
 import BrandMark from '../_landing/brand-mark';
 import { C } from '../_landing/shared';
-import { inr, tierItems, valueTotalFor } from './included';
+import { VIP_ADDON_BULLETS, inr, tierItems, valueTotalFor } from './included';
 
 declare global {
   interface Window {
@@ -119,20 +123,30 @@ type Fields = {
 };
 
 /**
- * The checkout form.
+ * The checkout form, and the VIP upsell.
  *
- * The TIER ARRIVES AS A PROP, read from the query string by the server
- * component in ./page.tsx — deliberately not with useSearchParams here.
- * useSearchParams forces a Suspense boundary, and a Suspense boundary at the
- * top of a client page means the server sends `null` and the entire checkout
- * paints only once JS has run. On the one page where money changes hands, that
- * is a blank screen on a slow connection at the worst possible moment. Reading
- * it server-side keeps the whole form in the first HTML response.
+ * There was briefly an /oto page where the buyer chose a pass before arriving
+ * here. It is gone: VIP is an ADDON on this page now, so the funnel lost a
+ * screen and the upgrade is decided at the moment of payment rather than
+ * before it.
  *
- * What the tier does here is DISPLAY ONLY. create-order resolves it again from
- * its own table and charges from that, so nothing on this page decides a price.
+ * `initialTier` comes from ?tier= — read by the server component in ./page.tsx
+ * and NOT with useSearchParams here. useSearchParams forces a Suspense
+ * boundary, and a Suspense boundary at the top of a client page means the
+ * server sends `null` and the whole checkout paints only once JS has run: a
+ * blank screen, on a slow connection, on the page where money changes hands.
+ *
+ * After that first render the buyer owns the choice via the addon toggle. The
+ * URL is only the starting position, so an ad can still point straight at a
+ * VIP-selected checkout.
+ *
+ * All of this is DISPLAY ONLY. create-order resolves the tier again from its
+ * own table and charges from that, so nothing on this page decides a price.
  */
-export default function CheckoutForm({ tier }: { tier: Tier }) {
+export default function CheckoutForm({ initialTier }: { initialTier: Tier }) {
+  const [wantsVip, setWantsVip] = useState(initialTier.id === 'vip');
+  const tier = wantsVip ? TIER_VIP : TIER_BASE;
+
   const [f, setF] = useState<Fields>({
     firstName: '',
     lastName: '',
@@ -156,6 +170,28 @@ export default function CheckoutForm({ tier }: { tier: Tier }) {
      the landing page, so without this they were invisible to Meta until the pay
      tap. Ref-guarded so StrictMode's double effect and a remount cannot inflate
      the count. */
+  /* The docked bar's height, measured rather than guessed, so the spacer after
+     the footer matches it exactly. Reads 0 from lg where the bar is
+     display:none, so the spacer disappears on desktop without its own
+     breakpoint, and it re-measures when the addon row wraps at a narrow width
+     or the button label changes length with the price. */
+  const barRef = useRef<HTMLDivElement>(null);
+  const [barH, setBarH] = useState(0);
+
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const measure = () => setBarH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
   const arrived = useRef(false);
   useEffect(() => {
     if (arrived.current) return;
@@ -355,7 +391,13 @@ export default function CheckoutForm({ tier }: { tier: Tier }) {
               price stays in view while the form is filled, and collapses to an
               accordion on a phone so it never pushes the fields below the fold. */}
           <div className="grid gap-8 lg:grid-cols-[1fr_minmax(320px,380px)] lg:items-start lg:gap-10">
+            {/* id, because the docked bar's Pay button lives OUTSIDE this form
+                — it has to, to be position:fixed — and submits it by
+                `form="kz-checkout"`. That is what makes the docked button run
+                exactly the same startPayment path as the inline one, rather
+                than a second copy of the logic that can drift from it. */}
             <form
+              id="kz-checkout"
               onSubmit={startPayment}
               noValidate
               className="rounded-2xl p-6 sm:p-8"
@@ -507,6 +549,12 @@ export default function CheckoutForm({ tier }: { tier: Tier }) {
                 </label>
               </div>
 
+              {/* The upsell, immediately above the button. It replaced a
+                  whole page: there was an /oto step where the buyer chose a
+                  pass first, and an order bump at the point of payment asks
+                  for the same decision without costing a screen. */}
+              <VipAddon on={wantsVip} onToggle={() => setWantsVip((v) => !v)} />
+
               {touched && !valid && (
                 <p className="mt-4 text-[12.5px]" style={{ color: C.coralInk }}>
                   Please add your name, a working email and a valid number.
@@ -585,6 +633,61 @@ export default function CheckoutForm({ tier }: { tier: Tier }) {
       </section>
 
       <SiteFooter />
+
+      {/* Exactly the docked bar's height, so the footer's operator address,
+          contact details and policy links are not permanently underneath it on
+          the last screen. Measured, not a guessed padding: the bar is three
+          rows on a phone and grows with the iOS safe-area inset. */}
+      <div aria-hidden style={{ height: barH }} />
+
+      {/* ══ The docked bar ══════════════════════════════════════════════
+          Below lg only. From lg the pay button and the order summary are both
+          on screen at once, so a fixed bar there would be chrome repeating
+          what is already visible.
+          It carries the SAME three things as the form, in the order they
+          matter on a small screen: the upgrade, the reassurance, the button. */}
+      <div
+        ref={barRef}
+        className="fixed inset-x-0 bottom-0 z-50 lg:hidden"
+        style={{
+          background: 'rgba(255,253,248,0.97)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          borderTop: `1px solid ${C.lineStrong}`,
+          boxShadow: '0 -12px 36px -24px rgba(31,50,92,0.45)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        <div className="mx-auto flex max-w-[1180px] flex-col gap-2 px-4 py-3">
+          <VipAddonCompact on={wantsVip} onToggle={() => setWantsVip((v) => !v)} />
+
+          <button
+            type="submit"
+            form="kz-checkout"
+            disabled={busy}
+            className="lego-press cta-shimmer inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl px-6 text-[15px] font-bold disabled:opacity-60"
+            style={{
+              background: C.ctaGold,
+              color: C.navyDeep,
+              ['--shimmer' as string]: 'rgba(255,255,255,0.35)',
+            }}
+          >
+            {busy ? 'Taking you to payment…' : `Pay ${tier.price} & Join the Reset`}
+          </button>
+
+          <p
+            className="flex items-center justify-center gap-1.5 text-center text-[11.5px] font-medium"
+            style={{ color: C.inkSoft }}
+          >
+            <ShieldCheck
+              weight="fill"
+              className="h-3 w-3 shrink-0"
+              style={{ color: C.coralInk }}
+            />
+            {CTA_NOTE}
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
@@ -619,11 +722,237 @@ function Header() {
       the same order: lead item, included list, subtotal / bonus value, the
       ruled Total, the method tile, then the guarantee line.
       Accordion below lg, always open from lg up. ───────────────────────── */
+/* ── The VIP addon ─────────────────────────────────────────────────────────
+ *
+ * A LABEL wrapping a real checkbox, not a styled div with an onClick. Three
+ * things come free with that and would all have to be hand-built otherwise:
+ * the whole card is a tap target, the spacebar toggles it, and a screen reader
+ * announces it as a checkbox with a checked state rather than as a paragraph.
+ *
+ * It sells the DIFFERENCE (+₹500), not the ₹997 total. The buyer has already
+ * decided to pay the base price; the only number they are weighing here is
+ * what the upgrade costs on top, and showing the total instead makes a ₹500
+ * decision look like a ₹997 one.
+ *
+ * It is NOT pre-ticked. A pre-selected paid addon is a dark pattern, it is the
+ * kind of thing Razorpay's merchant review takes a dim view of, and the refund
+ * it eventually causes costs more than the upgrade earned. ?tier=vip can
+ * pre-select it, because that is a link the buyer followed deliberately.
+ */
+/**
+ * The docked bar's version of the same control.
+ *
+ * One row, no bullets — the full card is a few centimetres up the page and
+ * repeating five bullets in a fixed bar would eat half a phone screen. It
+ * keeps the three things that make it a decision: the Recommended badge, the
+ * name, and what it costs on top.
+ *
+ * It is the SAME state as the card above, so ticking either moves both.
+ */
+function VipAddonCompact({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    /* Wrapper carries the animation, same reason as the full card. mx-1 insets
+       it from the bar's own px-4, so the rotated corners have room and never
+       reach the screen edges — see .kz-nudge-bar for why the angle is smaller
+       down here than on the card. */
+    <div className={`mx-1 ${on ? '' : 'kz-nudge-bar'}`}>
+      <label
+        className="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 transition-colors duration-300"
+        style={{
+          background: on
+            ? `linear-gradient(150deg, ${C.navyDeep} 0%, #1b2c53 100%)`
+            : C.goldWash,
+          border: `1.5px solid ${C.goldMid}`,
+        }}
+      >
+        <input type="checkbox" checked={on} onChange={onToggle} className="sr-only" />
+
+        <span
+          aria-hidden
+          className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded transition-colors duration-300"
+          style={{
+            background: on ? C.gold : C.canvas,
+            border: `2px solid ${on ? C.gold : C.goldMid}`,
+          }}
+        >
+          {on && <Check weight="bold" className="h-3 w-3" style={{ color: C.navyDeep }} />}
+        </span>
+
+        <span className="flex min-w-0 flex-1 items-center gap-2">
+          {!on && (
+            <span
+              className="hidden shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.1em] min-[380px]:inline"
+              style={{ background: C.coralInk, color: '#FFF7F5' }}
+            >
+              Recommended
+            </span>
+          )}
+          <span
+            className="truncate text-[12.5px] font-bold"
+            style={{ color: on ? C.onDark : C.ink }}
+          >
+            {on ? 'VIP upgrade added' : 'Add VIP upgrade'}
+          </span>
+        </span>
+
+        <span
+          className="shrink-0 font-display text-[13.5px] font-semibold tabular-nums"
+          style={{ color: on ? C.gold : C.goldDeep }}
+        >
+          + {VIP_UPGRADE}
+        </span>
+      </label>
+    </div>
+  );
+}
+
+/**
+ * ══ THE TWO STATES ═══════════════════════════════════════════════════════
+ *
+ * UNSELECTED is the loud one, which is the opposite of how a form control
+ * usually behaves and is the whole point. The reader is in "fill this in" mode
+ * by the time they reach it; a quiet bordered box reads as another field and
+ * gets scrolled past. So unselected gets the gold wash, the heavier gold
+ * border, the breathing ring (see .kz-nudge) and a "tap to add" hint.
+ *
+ * SELECTED goes CALM: solid navy border, no animation, a plain "Added" tick.
+ * Once someone has said yes, continuing to shout at them makes a settled
+ * decision feel unsettled, and it is the state they will sit in while they
+ * finish typing their details.
+ */
+function VipAddon({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  /* Selected is NAVY, not a tidier version of the cream card. It is the same
+     treatment /thank-you-vip gives the upgrade, so the thing they just bought
+     looks the same on the way in as it does on the way out — and a paid
+     upgrade that turns into a plain white box the moment you take it feels
+     like nothing happened. This is the one dark object on the checkout, which
+     is exactly what makes it read as the premium one. */
+  return (
+    /* The wrapper exists only to carry the animation. See .kz-nudge. */
+    <div className={`mt-7 rounded-2xl ${on ? '' : 'kz-nudge'}`}>
+      <label
+        className="lego-press flex cursor-pointer gap-3.5 rounded-2xl p-5 transition-colors duration-300"
+        style={{
+          background: on
+            ? `linear-gradient(150deg, ${C.navyDeep} 0%, #1b2c53 100%)`
+            : C.goldWash,
+          border: `2px solid ${on ? C.goldMid : C.goldMid}`,
+          boxShadow: on ? '0 22px 48px -28px rgba(31,50,92,0.55)' : undefined,
+        }}
+      >
+        <input type="checkbox" checked={on} onChange={onToggle} className="sr-only" />
+
+        {/* The box. aria-hidden because the real input above carries the state;
+            this is only what it looks like. Gold fill when selected, so the
+            tick reads as the reward colour rather than as a form control. */}
+        <span
+          aria-hidden
+          className="mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-md transition-colors duration-300"
+          style={{
+            background: on ? C.gold : C.canvas,
+            border: `2px solid ${on ? C.gold : C.goldMid}`,
+          }}
+        >
+          {on && <Check weight="bold" className="h-3.5 w-3.5" style={{ color: C.navyDeep }} />}
+        </span>
+
+        <span className="min-w-0 flex-1">
+          {/* The badge row. Coral with a live dot while it is an offer; once
+              taken, the coral badge gives way to a gold "VIP ACCESS ADDED" —
+              the same words the confirmation page uses. */}
+          <span className="flex flex-wrap items-center gap-2">
+            {on ? (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]"
+                style={{ background: 'rgba(242,221,182,0.18)', color: C.gold }}
+              >
+                <Check weight="bold" className="h-3 w-3" />
+                VIP Access added
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]"
+                style={{ background: C.coralInk, color: '#FFF7F5' }}
+              >
+                <span
+                  className="lego-pulse-dot inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{
+                    background: '#FFF7F5',
+                    ['--dot-pulse' as string]: 'rgba(255,247,245,0.55)',
+                  }}
+                />
+                Recommended
+              </span>
+            )}
+          </span>
+
+          <span className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <span
+              className="font-display text-[17px] font-semibold leading-snug sm:text-[18px]"
+              style={{ color: on ? C.onDark : C.ink }}
+            >
+              One-time VIP upgrade
+            </span>
+            <span
+              className="font-display text-[17px] font-semibold tabular-nums sm:text-[18px]"
+              style={{ color: on ? C.gold : C.goldDeep }}
+            >
+              + {VIP_UPGRADE}
+            </span>
+          </span>
+
+          {/* The reason, in one line, above the list. The recordings are what
+              answer the objection a live-only challenge creates, and most people
+              will not read five bullets before deciding. */}
+          <span
+            className="mt-1.5 block text-[13px] leading-snug"
+            style={{ color: on ? C.onDarkMute : C.ink }}
+          >
+            Life happens. Keep every session to rewatch, plus four extras.
+          </span>
+
+          <span className="mt-3 flex flex-col gap-1.5">
+            {VIP_ADDON_BULLETS.map((line) => (
+              <span key={line} className="flex items-start gap-2">
+                <Check
+                  weight="bold"
+                  className="mt-[3px] h-3 w-3 shrink-0"
+                  style={{ color: on ? C.gold : C.goldInk }}
+                />
+                <span
+                  className="text-[13px] leading-snug"
+                  style={{ color: on ? C.onDarkMute : C.inkSoft }}
+                >
+                  {line}
+                </span>
+              </span>
+            ))}
+          </span>
+
+          {/* Unselected: says what to do, because a checkbox nobody has ticked
+              is ambiguous about whether it is an offer or a summary.
+              Selected: says what now happens, so the card still has a last line
+              and the state change reads as progress rather than as loss. */}
+          <span
+            className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.1em]"
+            style={{ color: on ? C.gold : C.coralInk }}
+          >
+            {on ? 'Added to your order' : `Tap to add for ${VIP_UPGRADE} more`}
+          </span>
+        </span>
+      </label>
+    </div>
+  );
+}
+
 function OrderSummary({ tier }: { tier: Tier }) {
   const [open, setOpen] = useState(false);
   const [lead, ...bonuses] = tierItems(tier);
   const valueTotal = valueTotalFor(tier.id);
-  const bonusValue = valueTotal - lead.value;
+  /* `?? 0` because a LineItem's value is optional now — the session recordings
+     carry no figure. The lead item always has one, but the type cannot know
+     that and a silent NaN here would print "₹NaN" beside the bonuses. */
+  const bonusValue = valueTotal - (lead.value ?? 0);
 
   return (
     <div
@@ -694,7 +1023,7 @@ function OrderSummary({ tier }: { tier: Tier }) {
           className="shrink-0 text-right font-display text-[14px] font-semibold tabular-nums sm:text-[15px]"
           style={{ color: C.ink }}
         >
-          {inr(lead.value)}
+          {lead.value != null && inr(lead.value)}
         </div>
       </div>
 
@@ -715,7 +1044,11 @@ function OrderSummary({ tier }: { tier: Tier }) {
                   style={{ color: C.coralInk }}
                 />
                 <span className="flex-1 leading-snug">{r.title}</span>
-                <span className="shrink-0 font-medium tabular-nums">{inr(r.value)}</span>
+                {/* Unpriced rows — the session recordings — render without a
+                    figure rather than as "₹0". See LineItem in ./included. */}
+                {r.value != null && (
+                  <span className="shrink-0 font-medium tabular-nums">{inr(r.value)}</span>
+                )}
               </li>
             ))}
           </ul>

@@ -30,7 +30,7 @@ import Link from 'next/link';
 import BrandMark from './brand-mark';
 import { legoBrick, legoDelay } from './lego-style';
 import {
-  OTO_HREF,
+  CHECKOUT_HREF,
   CTA_LABEL,
   CTA_LABEL_CARD,
   HAS_ANCHOR,
@@ -319,7 +319,7 @@ export function Hero() {
                   focal action and carries the one breathing CTA. Two breathing
                   buttons on one screen is two primaries, which is none. */}
               <Link
-                href={OTO_HREF}
+                href={CHECKOUT_HREF}
                 data-cta
                 className="lego-press cta-shimmer group inline-flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-full px-8 font-body text-[15.5px] font-bold sm:w-auto"
                 style={{
@@ -433,7 +433,7 @@ export function Hero() {
 
               {/* THE breathing CTA. The only one on the page. */}
               <Link
-                href={OTO_HREF}
+                href={CHECKOUT_HREF}
                 data-cta
                 className="lego-press cta-shimmer cta-breath group mt-6 inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-2xl font-body text-[15.5px] font-bold"
                 style={{

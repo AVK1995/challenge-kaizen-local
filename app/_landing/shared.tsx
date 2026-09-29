@@ -17,7 +17,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import {
-  OTO_HREF,
+  CHECKOUT_HREF,
   DISCOUNT_BADGE,
   HAS_ANCHOR,
   PRICE,
@@ -154,7 +154,7 @@ export function SectionHeading({
  *  label would be unreadable.
  * ═══════════════════════════════════════════════════════════════════════ */
 export function PrimaryCTA({
-  href = OTO_HREF,
+  href = CHECKOUT_HREF,
   label,
   tone = 'navy',
   breathe = false,

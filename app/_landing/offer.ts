@@ -224,9 +224,19 @@ export const TIER_VIP = makeTier(
   VIP_ANCHOR_RUPEES,
 );
 
-/** Cheapest first — the OTO renders them in this order and the base tier is
- *  the one selected on arrival. */
+/** Cheapest first. Standard is what a buyer lands on; VIP is the addon. */
 export const TIERS: Tier[] = [TIER_BASE, TIER_VIP];
+
+/**
+ * What the VIP addon COSTS on top, derived rather than typed.
+ *
+ * The checkout sells VIP as an upgrade, so the number the buyer weighs is the
+ * difference — not the ₹997 total. Writing "+₹500" by hand would be wrong the
+ * first time either tier is repriced, and wrong in the one place the reader is
+ * doing the arithmetic themselves.
+ */
+export const VIP_UPGRADE_RUPEES = Math.max(0, TIER_VIP.rupees - TIER_BASE.rupees);
+export const VIP_UPGRADE = inr(VIP_UPGRADE_RUPEES);
 
 export const DEFAULT_TIER_ID: TierId = 'standard';
 
@@ -243,30 +253,17 @@ export function resolveTier(raw: string | null | undefined): Tier {
 }
 
 /**
- * The OTO's price-rise notice, e.g. "₹497 until Friday 3rd October".
+ * The payment page, and the ONLY next step from the landing page.
  *
- * ⚠️ OPTIONAL, AND OFF BY DEFAULT. The source copy carries "₹497 until
- * [deadline day and date] · then ₹997" with the bracket left unfilled. Two
- * reasons it does not ship as written:
+ * There was briefly an /oto page between the two, where the buyer chose a pass
+ * before reaching the checkout. It is gone: VIP is now an addon on the checkout
+ * itself, so the funnel is Ads → Landing → Checkout → Thank you and there is
+ * one fewer screen between wanting the thing and paying for it.
  *
- *   1. A placeholder in square brackets on a live sales page is worse than no
- *      line at all.
- *   2. This page has been here before. The announcement bar ran "Price
- *      Increases To ₹1599 Tomorrow" unchanged for weeks while the price never
- *      moved, which is what spec BLOCKER 2 was written to stop. An undated
- *      deadline teaches the reader to discount every other claim on the page.
- *
- * Set NEXT_PUBLIC_OTO_DEADLINE to a real date ("Friday 3rd October") and the
- * line appears. Leave it blank and the OTO simply does not make the claim.
- * If it is set, the price must actually rise on that date.
+ * ?tier=vip still works and still pre-selects the addon. Nothing links to it
+ * today, but it means an ad or an email can point straight at a VIP-selected
+ * checkout without needing a page to do it.
  */
-export const OTO_DEADLINE = (process.env.NEXT_PUBLIC_OTO_DEADLINE ?? '').trim();
-
-/** The next click after the landing page: choose a pass. Nothing is charged
- *  there — the OTO's own CTA is what reaches the checkout. */
-export const OTO_HREF = '/oto';
-
-/** The payment page. Takes ?tier= so it knows which pass to charge for. */
 export const CHECKOUT_HREF = '/checkout';
 
 /** Where a completed payment lands, per tier. */
