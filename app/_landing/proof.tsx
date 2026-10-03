@@ -69,10 +69,19 @@ const TESTIMONIALS: Testimonial[] = [
   { label: 'Kaizen member', vimeoId: '1221356516' },
 ];
 
-/* Twenty-one WhatsApp captures, resized to 640px wide and recompressed: the
+/* Twenty-five WhatsApp captures, resized to 640px wide and recompressed: the
    originals were 16MB together, which is more than the rest of the page put
-   together and would have been the single heaviest thing on the site. */
-const SCREENSHOTS: Screenshot[] = Array.from({ length: 21 }, (_, i) => ({
+   together and would have been the single heaviest thing on the site.
+
+   EVERY FILE IS 640x1387, and the rail depends on it. The cards are flex
+   children with the default `stretch`, and the <img> inside is `h-auto`, so
+   one capture at a different aspect ratio makes the whole row as tall as that
+   one card and leaves a strip of empty canvas under the other twenty-four.
+   ss-22..25 came off a 720x1600 handset (9:20, not the 9:19.5 the rest share)
+   and were fitted by HEIGHT and padded 8px each side in black rather than
+   scaled to width — black is what sits at the edge of a WhatsApp dark-theme
+   capture anyway, so the pad is invisible and no message content is cropped. */
+const SCREENSHOTS: Screenshot[] = Array.from({ length: 25 }, (_, i) => ({
   label: 'Message from a Kaizen member',
   src: `/images/screenshots/ss-${String(i + 1).padStart(2, '0')}.jpg`,
   alt: 'A WhatsApp message from a Kaizen member describing their experience',
@@ -338,10 +347,10 @@ export default function Proof() {
 
       {/* ── 7b · the wall ────────────────────────────────────────────────
           A second rail rather than the masonry this used to be. A masonry earns
-          its keep when tiles vary in height; these are twenty-one phone
-          captures at an identical 9:19.5, so it would have produced three dead
-          straight columns four screens tall. The rail bounds it to one screen
-          and shows the VOLUME of proof, which is this beat's whole job.
+          its keep when tiles vary in height; these are twenty-five phone
+          captures at an identical 640x1387, so it would have produced three
+          dead straight columns five screens tall. The rail bounds it to one
+          screen and shows the VOLUME of proof, which is this beat's whole job.
 
           It travels the opposite way to the video rail above, so the two read
           as a pair rather than as the same effect twice.
