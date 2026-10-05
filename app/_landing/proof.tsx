@@ -30,14 +30,20 @@ import { C, SectionHeading } from './shared';
 type Testimonial = { label: string; vimeoId?: string; meta?: string };
 type Screenshot = { label: string; src?: string; alt?: string };
 
-/* Fifteen clips, all shot vertical (9:16) and 31 to 81 seconds.
+/* Twenty-one clips, all shot vertical (9:16) and 7 to 81 seconds.
    `meta` is the speaker's name and is only set where the source video is
-   actually titled with one. Three of the fifteen are titled generically in the
-   library ("Mixed Testimonials", "Express Wellness"), and those run without a
-   name rather than with an invented one.
+   actually titled with one. Three are titled generically in the library
+   ("Mixed Testimonials", "Express Wellness"), and those run without a name
+   rather than with an invented one.
 
    Named speakers lead and the unnamed three sit last: a face with a name
-   attached to it is the stronger proof, and the rail is read from its start. */
+   attached to it is the stronger proof, and the rail is read from its start.
+
+   ⚠️ EVERY ENTRY NEEDS A POSTER at /images/testimonials/<vimeoId>.jpg. The
+   rail renders stills, not players — see the note on TestimonialRail — and the
+   <img> has no fallback, so an id added without its poster shows a broken
+   frame with a play button sitting on top of it. The six newest were pulled
+   from Vimeo's oEmbed thumbnail at 640x1138 to match the rest. */
 const TESTIMONIALS: Testimonial[] = [
   { label: 'Julie', vimeoId: '1221356514', meta: 'Julie' },
   { label: 'Nicole Bhatia', vimeoId: '1221356653', meta: 'Nicole Bhatia' },
@@ -51,15 +57,31 @@ const TESTIMONIALS: Testimonial[] = [
   { label: 'Shilpa Kerekar', vimeoId: '1222299331', meta: 'Shilpa Kerekar' },
   { label: 'Praryna', vimeoId: '1222299329', meta: 'Praryna' },
   { label: 'Khushi Dawda', vimeoId: '1222299330', meta: 'Khushi Dawda' },
+  /* Added 1 Oct 2026. */
+  { label: 'Nidhi', vimeoId: '1232018001', meta: 'Nidhi' },
+  { label: 'Padma', vimeoId: '1232017996', meta: 'Padma' },
+  { label: 'Deepika', vimeoId: '1232017997', meta: 'Deepika' },
+  { label: 'Ruchi', vimeoId: '1232018055', meta: 'Ruchi' },
+  { label: 'Rakhee', vimeoId: '1232018034', meta: 'Rakhee' },
+  { label: 'Vishnupriya', vimeoId: '1232017998', meta: 'Vishnupriya' },
   { label: 'Kaizen member', vimeoId: '1221356641' },
   { label: 'Kaizen member', vimeoId: '1221356609' },
   { label: 'Kaizen member', vimeoId: '1221356516' },
 ];
 
-/* Twenty-one WhatsApp captures, resized to 640px wide and recompressed: the
+/* Twenty-five WhatsApp captures, resized to 640px wide and recompressed: the
    originals were 16MB together, which is more than the rest of the page put
-   together and would have been the single heaviest thing on the site. */
-const SCREENSHOTS: Screenshot[] = Array.from({ length: 21 }, (_, i) => ({
+   together and would have been the single heaviest thing on the site.
+
+   EVERY FILE IS 640x1387, and the rail depends on it. The cards are flex
+   children with the default `stretch`, and the <img> inside is `h-auto`, so
+   one capture at a different aspect ratio makes the whole row as tall as that
+   one card and leaves a strip of empty canvas under the other twenty-four.
+   ss-22..25 came off a 720x1600 handset (9:20, not the 9:19.5 the rest share)
+   and were fitted by HEIGHT and padded 8px each side in black rather than
+   scaled to width — black is what sits at the edge of a WhatsApp dark-theme
+   capture anyway, so the pad is invisible and no message content is cropped. */
+const SCREENSHOTS: Screenshot[] = Array.from({ length: 25 }, (_, i) => ({
   label: 'Message from a Kaizen member',
   src: `/images/screenshots/ss-${String(i + 1).padStart(2, '0')}.jpg`,
   alt: 'A WhatsApp message from a Kaizen member describing their experience',
@@ -100,7 +122,7 @@ function PendingFrame({ label, note }: { label: string; note: string }) {
  *
  *  The track is rendered twice for a seamless loop, and the animation travels
  *  -50%, which is exactly one copy. The second copy is aria-hidden so a screen
- *  reader hears fifteen testimonials, not thirty.
+ *  reader hears twenty-one testimonials, not forty-two.
  *
  *  `playingKey` carries the COPY INDEX as well as the video id. Both copies of
  *  a card are clickable (the duplicate is on screen half the time, so making it
@@ -314,9 +336,10 @@ export default function Proof() {
       </SectionHeading>
 
       {/* ── 7a · the rail ────────────────────────────────────────────────
-          Fifteen clips is too many to grid: five rows of portrait cards would
-          push the wall below it off the page entirely. One self-scrolling row
-          shows the VOLUME of proof at a glance and costs a single screen.
+          Twenty-one clips is far too many to grid: seven rows of portrait
+          cards would push the wall below it off the page entirely. One
+          self-scrolling row shows the VOLUME of proof at a glance and costs
+          a single screen.
           Poster in a mat with an inner hairline ring, so each card reads as an
           exhibit rather than a quote box, with an on-brand play disc instead of
           a platform-red triangle. */}
@@ -324,10 +347,10 @@ export default function Proof() {
 
       {/* ── 7b · the wall ────────────────────────────────────────────────
           A second rail rather than the masonry this used to be. A masonry earns
-          its keep when tiles vary in height; these are twenty-one phone
-          captures at an identical 9:19.5, so it would have produced three dead
-          straight columns four screens tall. The rail bounds it to one screen
-          and shows the VOLUME of proof, which is this beat's whole job.
+          its keep when tiles vary in height; these are twenty-five phone
+          captures at an identical 640x1387, so it would have produced three
+          dead straight columns five screens tall. The rail bounds it to one
+          screen and shows the VOLUME of proof, which is this beat's whole job.
 
           It travels the opposite way to the video rail above, so the two read
           as a pair rather than as the same effect twice.

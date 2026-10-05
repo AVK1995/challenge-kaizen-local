@@ -20,8 +20,15 @@
  *     their filenames, which is precisely the case this version exists for:
  *     without the bump the edge and the image optimizer keep serving the old
  *     bytes, and the wrong schedule stays live while the file on disk is right.
+ * v4: 29 Sep 2026, system-stack.png AND included_01.png both re-cut for the
+ *     Day 3 / Day 4 swap — they are the two assets that spell the running
+ *     order out in pixels, so they move together or they contradict each other.
+ *     An intermediate cut of system-stack had "Day 3" on two cards and no Day 5
+ *     at all and was never committed; both files here carry all five days once
+ *     each, in the delivered order. Same filenames again, so the same bump
+ *     covers both.
  */
-export const ASSET_V = '3';
+export const ASSET_V = '4';
 
 /** Appends the version to a /public path. */
 export const asset = (path: string) => `${path}?v=${ASSET_V}`;
