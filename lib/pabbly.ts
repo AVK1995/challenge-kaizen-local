@@ -1,32 +1,25 @@
 /**
- * Pabbly Connect: the fulfilment hand-off.
+ * Pabbly Connect: the registration hand-off.
  *
- * Analytics tells Meta and GA4 that a sale happened. This tells the automation
- * who bought, so the buyer actually receives what they paid for: the WhatsApp
- * invite, the joining details, the guide downloads, the row in a sheet.
+ * Analytics tells Meta and GA4 that a registration happened. This tells the
+ * automation WHO registered, so they actually receive the WhatsApp invite, the
+ * joining details and the guides, and land as a row in the sheet.
  *
- * It is fired from the Razorpay webhook and nowhere else, for the same reason
- * the Purchase event is: the webhook is the only place a payment is proven, and
- * UPI buyers routinely never return to the confirmation page. A browser-side
- * hand-off would silently skip most Indian buyers.
- *
- * Failure here must never fail the webhook. Razorpay retries a non-200, and a
- * retry would re-fire Meta and GA4 and double-count the sale. So this reports
- * its own success and swallows its own errors: the caller logs the result and
- * still returns 200.
+ * Fired from /api/register, in the same request that fires Meta's
+ * registration_complete, so the two can never disagree about whether a lead
+ * exists.
  *
  * ── Why this payload carries the Meta match keys too ──────────────────────
- * Pabbly is not only fulfilment; it is the ONLY place the full, unhashed
- * record of a sale exists. Meta receives hashes and nothing descriptive, GA4
- * receives no PII at all, and Razorpay holds only what it needs to charge a
- * card. So `fbc`, `fbp`, `client_ip_address`, `client_user_agent`,
- * `external_id` and `purchase_event_id` ride along here as well — they are
- * what makes it possible to rebuild, replay or reconcile a Meta event later
- * from the sheet, without which a mis-sent conversion is unrecoverable.
+ * Pabbly is the ONLY place the full, unhashed record of a registration exists.
+ * Meta receives hashes and nothing descriptive, and GA4 receives no PII at
+ * all. So `fbc`, `fbp`, `client_ip_address`, `client_user_agent`,
+ * `external_id` and `registration_event_id` ride along here — they are what
+ * makes it possible to rebuild, replay or reconcile a Meta event later from the
+ * sheet.
  */
 export const pabblyReady = () => Boolean(process.env.PABBLY_WEBHOOK_URL);
 
-export type PabblyPurchase = {
+export type PabblyRegistration = {
   leadId: string;
   createdAt: string;
   firstName: string;
@@ -35,15 +28,16 @@ export type PabblyPurchase = {
   phone: string;
   city: string;
   countryCode: string;
+  occupation: string;
   fbc: string;
   fbp: string;
   clientIp: string;
   clientUserAgent: string;
   externalId: string;
   eventSourceUrl: string;
-  amountRupees: number;
   isTest: boolean;
-  purchaseEventId: string;
+  /** The event_id sent to Meta as registration_complete. */
+  registrationEventId: string;
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
@@ -52,27 +46,10 @@ export type PabblyPurchase = {
   fbclid: string;
   referrer: string;
   landingUrl: string;
-  /* Beyond the agreed column set, kept because existing Pabbly steps already
-     map them and removing a key silently blanks a column downstream. */
-  paymentId: string;
-  orderId: string;
-  currency: string;
   product: string;
-  occupation: string;
-  /**
-   * WHICH PASS: 'standard' | 'vip'. The field the fulfilment router should
-   * branch on, and the reason it exists rather than reusing what was already
-   * here.
-   *
-   * `amount` looks like it would do the job and does not: the price is an env
-   * var, a VIP tier repriced to ₹1,299 or a standard tier raised to ₹597 would
-   * silently send every buyer down the wrong branch, and nothing would fail
-   * loudly. `product` carries the offer WORDING, so a router matching it
-   * breaks the next time someone rewords the card.
-   *
-   * This value is the tier's own id. It changes only if the tier changes.
-   */
-  tier: string;
+  /** Where the visitor is according to the edge, independent of the form. */
+  geoCountry: string;
+  geoCity: string;
 };
 
 /* Every key is emitted on every call, empty string where unknown. Pabbly
@@ -82,8 +59,8 @@ export type PabblyPurchase = {
    empty one. */
 const s = (v: unknown) => (v == null ? '' : String(v));
 
-export async function sendPabblyPurchase(
-  p: PabblyPurchase,
+export async function sendPabblyRegistration(
+  p: PabblyRegistration,
 ): Promise<{ ok: boolean; status: number }> {
   const url = process.env.PABBLY_WEBHOOK_URL ?? '';
   if (!url) return { ok: false, status: 0 };
@@ -95,26 +72,29 @@ export async function sendPabblyPurchase(
       /* Flat keys, no nesting: Pabbly maps fields one level deep, and a nested
          object arrives as an unusable blob in the step mapper. */
       body: JSON.stringify({
+        event: 'free_registration',
+        funnel: 'dubai_free',
+        product: s(p.product),
         lead_id: s(p.leadId),
         created_at: s(p.createdAt),
         first_name: s(p.firstName),
         last_name: s(p.lastName),
+        name: `${s(p.firstName)} ${s(p.lastName)}`.trim(),
         email: s(p.email),
         phone: s(p.phone),
         city: s(p.city),
         country_code: s(p.countryCode),
+        occupation: s(p.occupation),
         fbc: s(p.fbc),
         fbp: s(p.fbp),
         client_ip_address: s(p.clientIp),
         client_user_agent: s(p.clientUserAgent),
         external_id: s(p.externalId),
         event_source_url: s(p.eventSourceUrl),
-        amount: p.amountRupees,
         /* Boolean, not the string "false": a Pabbly router condition on a
-           non-empty string treats "false" as true and would route live sales
-           down the test branch. */
+           non-empty string treats "false" as true. */
         is_test: Boolean(p.isTest),
-        purchase_event_id: s(p.purchaseEventId),
+        registration_event_id: s(p.registrationEventId),
         utm_source: s(p.utmSource),
         utm_medium: s(p.utmMedium),
         utm_campaign: s(p.utmCampaign),
@@ -123,15 +103,8 @@ export async function sendPabblyPurchase(
         fbclid: s(p.fbclid),
         referrer: s(p.referrer),
         landing_url: s(p.landingUrl),
-
-        event: 'purchase',
-        payment_id: s(p.paymentId),
-        order_id: s(p.orderId),
-        name: `${s(p.firstName)} ${s(p.lastName)}`.trim(),
-        currency: s(p.currency),
-        product: s(p.product),
-        occupation: s(p.occupation),
-        tier: s(p.tier),
+        geo_country: s(p.geoCountry),
+        geo_city: s(p.geoCity),
       }),
     });
     return { ok: res.ok, status: res.status };

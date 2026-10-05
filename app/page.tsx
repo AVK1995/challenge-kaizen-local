@@ -13,6 +13,7 @@ import FunnelTracker from '@/components/FunnelTracker';
 
 import { AnnouncementBar, Hero } from './_landing/hero';
 import { C } from './_landing/shared';
+import RegisterModal from './_landing/register-modal';
 import StickyCta from './_landing/sticky-cta';
 
 const BelowFold = dynamic(() => import('./_landing/below-fold'));
@@ -32,6 +33,7 @@ export default function Page() {
       <Hero />
       <BelowFold />
       <StickyCta />
+      <RegisterModal />
     </main>
   );
 }

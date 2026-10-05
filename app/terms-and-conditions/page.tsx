@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
 import LegalPageLayout from '@/components/LegalPageLayout';
 
 import { LEGAL } from '../_landing/legal';
-import { PRICE, SESSION_TIMES_TZ, START_DATE } from '../_landing/offer';
+import { SESSION_TIMES_TZ, START_DATE } from '../_landing/offer';
 
 export const metadata: Metadata = {
   title: `Terms and Conditions | ${LEGAL.brand}`,
@@ -17,7 +16,7 @@ export default function TermsPage() {
     <LegalPageLayout
       title="Terms and Conditions"
       effectiveDate={LEGAL.effectiveDate}
-      intro={`These terms apply when you buy or take part in the ${LEGAL.product}. By completing checkout you agree to them.`}
+      intro={`These terms apply when you register for or take part in the ${LEGAL.product}. By completing registration you agree to them.`}
     >
       <h2>1. Who we are</h2>
       <p>
@@ -25,11 +24,11 @@ export default function TermsPage() {
         {LEGAL.tradeName}, {LEGAL.address}.
       </p>
 
-      <h2>2. What you are buying</h2>
+      <h2>2. What you are registering for</h2>
       <p>
         Access to the {LEGAL.product}: five live expert-led sessions delivered on
         Zoom, starting {START_DATE} at {SESSION_TIMES_TZ}, together with the
-        digital guides listed at checkout. The fee is {PRICE}.
+        digital guides described on the registration page. Registration is free.
       </p>
 
       <h2>3. Sessions and scheduling</h2>
@@ -68,7 +67,7 @@ export default function TermsPage() {
           permitted.
         </li>
         <li>
-          We may withdraw access without refund for abusive conduct toward staff
+          We may withdraw access for abusive conduct toward staff
           or other participants.
         </li>
       </ul>
@@ -87,11 +86,10 @@ export default function TermsPage() {
         consistency and health status.
       </p>
 
-      <h2>8. Payment and refunds</h2>
+      <h2>8. Fees</h2>
       <p>
-        Payment is taken at checkout through our payment processor. Refunds are
-        governed by our{' '}
-        <Link href="/refund-policy">Refund Policy</Link>.
+        The programme is free. We do not take any payment for registration or
+        participation.
       </p>
 
       <h2>9. Liability</h2>

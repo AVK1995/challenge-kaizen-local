@@ -18,12 +18,11 @@ export default function PrivacyPolicyPage() {
       intro={`This policy explains what ${LEGAL.brand} collects when you visit this site or join the ${LEGAL.product}, why we collect it, and what you can ask us to do with it.`}
     >
       <h2>1. Information we collect</h2>
-      <p>Directly from you, when you register or pay:</p>
+      <p>Directly from you, when you register:</p>
       <ul>
-        <li>Your name, email address and WhatsApp number.</li>
         <li>
-          Payment confirmation details from our payment processor. We never see
-          or store your full card number, UPI PIN or bank credentials.
+          Your name, email address, WhatsApp number, city, country and whether
+          you are a working professional or a homemaker.
         </li>
         <li>Anything you send us by email or message.</li>
       </ul>
@@ -46,7 +45,7 @@ export default function PrivacyPolicyPage() {
           included guides.
         </li>
         <li>To answer your questions and provide support.</li>
-        <li>To send transactional email related to your purchase.</li>
+        <li>To send messages related to your registration.</li>
         <li>
           To measure which ads and pages work, so we spend less to reach the
           people we can help.
@@ -61,15 +60,15 @@ export default function PrivacyPolicyPage() {
       <p>
         We use Meta (Facebook and Instagram) advertising tools and web analytics.
         These may set cookies and receive a hashed, non-readable version of your
-        email or phone number so a purchase can be matched to the ad that led to
+        email or phone number so a registration can be matched to the ad that led to
         it. They do not receive your details in a form that identifies you to
         anyone reading them.
       </p>
 
       <h2>4. Who we share it with</h2>
       <p>
-        Only with the services needed to run the programme: our payment
-        processor, our email and messaging providers, our video conferencing
+        Only with the services needed to run the programme: our automation
+        and CRM tools, our email and messaging providers, our video conferencing
         provider, and our analytics and advertising platforms.{' '}
         <strong>We do not sell your personal information.</strong>
       </p>

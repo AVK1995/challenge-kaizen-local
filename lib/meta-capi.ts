@@ -17,7 +17,7 @@ import crypto from 'crypto';
  * cannot remove. Every signal we CAN remove is removed here, and that means
  * the two surfaces this file owns:
  *
- *   `custom_data` — value, currency and order_id ONLY. No `content_name`, no
+ *   `custom_data` — the occupation enum ONLY. No `content_name`, no
  *   product string, no category, no UTM, no fbclid. custom_data is NOT hashed
  *   and IS read: "5-Day (Peri)Menopause Reset Challenge" arriving on every
  *   event is a plain-text declaration of the condition, and `utm_campaign`
@@ -63,28 +63,22 @@ export function originOnly(url: string): string {
 }
 
 /** Meta's standard events. Nothing outside this union is sendable. */
-export type StandardEvent =
-  | 'ViewContent'
-  | 'AddToCart'
-  | 'InitiateCheckout'
-  | 'Purchase';
+export type StandardEvent = 'ViewContent';
 
 /**
  * Custom events, kept to a closed union for the same reason the standard ones
  * are: a free-form string is how a health term eventually reaches Meta as an
  * event name, which is the surface that gets a dataset classified.
  *
- * QualifiedLead fires at the same instant as InitiateCheckout — details valid,
- * payment sheet opening — but only for the occupation the client sells to. It
- * is a segment label on an existing step rather than a new funnel stage, and it
- * exists so the higher-intent half can be optimised toward and used as a
- * lookalike seed. The name carries no condition word, which is what keeps it
- * safe to add.
+ *   atc_event              a landing-page CTA was clicked and the free
+ *                          registration modal opened.
+ *   registration_complete  the modal form was submitted and the lead stored.
  *
- * It costs one Aggregated Event Measurement slot on iOS, where standard events
- * rank above custom ones. That is the known price.
+ * Both are fired from the browser pixel AND from the Conversions API with the
+ * same event_id, so Meta deduplicates the pair into one event while keeping
+ * the strongest match keys from each side.
  */
-export type CustomEvent = 'QualifiedLead';
+export type CustomEvent = 'atc_event' | 'registration_complete';
 
 export type SendableEvent = StandardEvent | CustomEvent;
 
@@ -131,6 +125,12 @@ export function hashCity(v: string) {
   return s ? sha256Hex(s) : undefined;
 }
 
+/* Postal code: lowercase, no spaces or dashes. */
+export function hashZip(v: string) {
+  const s = v.trim().toLowerCase().replace(/[\s-]/g, '');
+  return s ? sha256Hex(s) : undefined;
+}
+
 export type UserSignals = {
   email?: string;
   phone?: string;
@@ -138,6 +138,10 @@ export type UserSignals = {
   lastName?: string;
   country?: string;
   city?: string;
+  /** Region / emirate / state, Meta's `st`. From the edge geo headers. */
+  state?: string;
+  /** Postal code, Meta's `zp`. From the edge geo headers where present. */
+  zip?: string;
   externalId?: string;
   fbc?: string;
   fbp?: string;
@@ -152,7 +156,9 @@ function buildUserData(u: UserSignals) {
     ...(u.firstName && { fn: [hashName(u.firstName)!] }),
     ...(u.lastName && { ln: [hashName(u.lastName)!] }),
     ...(u.country && { country: [hashCountry(u.country)!] }),
-    ...(u.city && { ct: [hashCity(u.city)!] }),
+    ...(u.city && hashCity(u.city) && { ct: [hashCity(u.city)!] }),
+    ...(u.state && hashCity(u.state) && { st: [hashCity(u.state)!] }),
+    ...(u.zip && hashZip(u.zip) && { zp: [hashZip(u.zip)!] }),
     ...(u.externalId && { external_id: [sha256Hex(u.externalId)] }),
     ...(u.fbc && { fbc: u.fbc }),
     ...(u.fbp && { fbp: u.fbp }),
@@ -173,16 +179,10 @@ export async function sendCapiEvent(params: {
   eventId: string;
   eventSourceUrl: string;
   user: UserSignals;
-  valueRupees: number;
-  currency: string;
-  /* An opaque Razorpay id. It says nothing about what was bought, and Meta
-     uses it for its own deduplication of a purchase across sources. */
-  orderId?: string;
   /* The working-professional / homemaker split. Typed, not free-form — see the
      Occupation union above. This is the one descriptive value that earns its
-     place in custom_data: it is what the audience segmentation and the
-     QualifiedLead optimisation are built on, and neither of its two possible
-     values names a condition. */
+     place in custom_data: it is what the audience segmentation is built on,
+     and neither of its two possible values names a condition. */
   occupation?: Occupation;
   testEventCode?: string;
 }): Promise<{ ok: boolean; status: number; body: unknown }> {
@@ -195,16 +195,13 @@ export async function sendCapiEvent(params: {
         event_source_url: originOnly(params.eventSourceUrl),
         action_source: 'website',
         user_data: buildUserData(params.user),
-        /* Nothing may be added here without the same review these four got.
-           See the classification note at the top of this file: every key below
-           is a number, an opaque id, or one of two reviewed enum values, and
-           that is the property that keeps this dataset unclassified. */
-        custom_data: {
-          currency: params.currency,
-          value: params.valueRupees,
-          ...(params.orderId && { order_id: params.orderId }),
-          ...(params.occupation && { occupation: params.occupation }),
-        },
+        /* Nothing may be added here without review. See the classification
+           note at the top of this file. The funnel is free, so there is no
+           value or currency to report; the only key is one of two reviewed
+           enum values. */
+        ...(params.occupation && {
+          custom_data: { occupation: params.occupation },
+        }),
       },
     ],
     ...(params.testEventCode && { test_event_code: params.testEventCode }),

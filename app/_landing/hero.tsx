@@ -30,13 +30,11 @@ import Link from 'next/link';
 import BrandMark from './brand-mark';
 import { legoBrick, legoDelay } from './lego-style';
 import {
-  CHECKOUT_HREF,
+  REGISTER_HREF,
   CTA_LABEL,
   CTA_LABEL_CARD,
-  HAS_ANCHOR,
   PRICE,
-  PRICE_ANCHOR,
-  REFUND_LINE,
+  REASSURANCE_LINE,
   SEATS_CAP,
   SEATS_LEFT,
   SESSION_TIMES,
@@ -44,7 +42,7 @@ import {
   WOMEN_SUPPORTED,
 } from './offer';
 import { asset } from './asset-version';
-import { Art, C, CtaNote, DiscountBadge, PriceAnchor } from './shared';
+import { Art, C, CtaNote, PriceAnchor } from './shared';
 
 /* ══ 0 · Announcement strip (R10) ══════════════════════════════════════════
    A slim navy strip with one live coral dot and a slow shine, so it reads as
@@ -65,19 +63,6 @@ export function AnnouncementBar() {
     <>
       <span className="font-bold">Special Offer:</span> 5-Day (Peri)Menopause
       Reset Challenge for{' '}
-      {/* Guarded like every other price point: with no valid anchor there is
-          nothing to strike, and a struck figure BELOW the one being charged is
-          worse than none at all. See HAS_ANCHOR in offer.ts. */}
-      {HAS_ANCHOR && (
-        <>
-          <s
-            className="decoration-[1.5px]"
-            style={{ color: 'rgba(253,249,241,0.6)', textDecorationColor: C.coral }}
-          >
-            {PRICE_ANCHOR}
-          </s>{' '}
-        </>
-      )}
       <span className="font-bold" style={{ color: C.gold }}>
         {PRICE}
       </span>
@@ -88,7 +73,7 @@ export function AnnouncementBar() {
         {SEATS_LEFT} seats left
       </span>
     </>,
-    <>{REFUND_LINE}</>,
+    <>{REASSURANCE_LINE}</>,
     <>
       Live · Starts {START_DATE} · {SESSION_TIMES}
     </>,
@@ -185,11 +170,10 @@ const HERO_FACTS = [
  * the one asset on the page that spells the schedule out in pixels, and no
  * amount of copy nearby can correct it.
  *
- * ⚠️ ONE THING IS STILL BAKED IN: the seal reads a hard "₹497". Every other
- * figure on the site comes from NEXT_PUBLIC_PRICE_RUPEES, so changing the price
- * moves all of them except this one, and the hero would then show two prices at
- * once — the struck/live pair in the card, and ₹497 in the art above it. Re-cut
- * the graphic in the same pass as any price change.
+ * ⚠️ THIS ART STILL READS "₹497". The funnel is FREE now and every other
+ * price point on the site says so, but the seal in this graphic does not.
+ * Re-cut it (or swap the seal for "FREE") before this funnel goes live, or the
+ * hero shows a paid price directly beside a free registration button.
  *
  * ratio matches the asset's own 2752x1536. It was 3 / 2 for the previous cut,
  * and leaving it there would have cropped about 8% off each side with
@@ -240,7 +224,6 @@ export function Hero() {
                 />
                 For Women Navigating Perimenopause &amp; Menopause · 5-Day Reset
               </span>
-              <DiscountBadge />
             </div>
 
             {/* ONE lit token in the headline: the number that carries the
@@ -270,10 +253,10 @@ export function Hero() {
                 shots competing.
 
                 ⚠️ The banner has "₹497" and "6:30 AM and 7 PM" baked into it.
-                Those are env-driven everywhere else on the site now, so if
-                NEXT_PUBLIC_PRICE_RUPEES or NEXT_PUBLIC_SESSION_TIMES change,
-                this artwork has to be re-cut or it will contradict the copy
-                directly beneath it. */}
+                The funnel is FREE now, so the ₹497 contradicts the copy and
+                must be re-cut before launch, as must the times if
+                NEXT_PUBLIC_SESSION_TIMES changes, or the artwork will
+                contradict the copy directly beneath it. */}
             {/* NO `priority`. It is tempting — the banner is above the fold on
                 the phones that see it — but priority emits a <link rel=preload>
                 in the document head, and the head has no idea about sm:hidden.
@@ -319,7 +302,7 @@ export function Hero() {
                   focal action and carries the one breathing CTA. Two breathing
                   buttons on one screen is two primaries, which is none. */}
               <Link
-                href={CHECKOUT_HREF}
+                href={REGISTER_HREF}
                 data-cta
                 className="lego-press cta-shimmer group inline-flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-full px-8 font-body text-[15.5px] font-bold sm:w-auto"
                 style={{
@@ -426,14 +409,14 @@ export function Hero() {
                   size="lg"
                   stacked
                   align="center"
-                  note="one-time"
+                  note="Free registration · Limited seats"
                   className="lg:items-start lg:text-left"
                 />
               </div>
 
               {/* THE breathing CTA. The only one on the page. */}
               <Link
-                href={CHECKOUT_HREF}
+                href={REGISTER_HREF}
                 data-cta
                 className="lego-press cta-shimmer cta-breath group mt-6 inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-2xl font-body text-[15.5px] font-bold"
                 style={{
@@ -456,7 +439,7 @@ export function Hero() {
                 style={{ color: C.inkSoft }}
               >
                 <Lock weight="fill" className="h-3.5 w-3.5" style={{ color: C.goldInk }} />
-                100% Secure · UPI / Card / NetBanking
+                Free registration · No card required
               </p>
             </div>
           </div>
@@ -481,13 +464,11 @@ export function Hero() {
 const STATS = [
   { icon: Heart, big: WOMEN_SUPPORTED, small: 'Women Supported', bed: C.coralBed, fg: C.coralInk },
   { icon: Star, big: '4.9 / 5', small: 'Women 40–55', bed: C.goldPale, fg: C.goldInk },
-  /* Was "100%" / "Money-Back Guarantee". The figure and the label together now
-     read as the page's one refund string — "Full refund if you don't love Day
-     One." — rather than as a third wording of the same promise. (BLOCKER 4.) */
+  /* Was the refund promise. The funnel is free now, so the slot says that. */
   {
     icon: ShieldCheck,
-    big: 'Full refund',
-    small: "if you don't love Day One.",
+    big: '100% Free',
+    small: 'No card required',
     bed: C.navyBed,
     fg: C.ink,
   },

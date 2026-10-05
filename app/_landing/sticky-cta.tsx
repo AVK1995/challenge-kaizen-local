@@ -24,7 +24,7 @@ import { ArrowRight, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { CHECKOUT_HREF, CTA_LABEL_STICKY, GUARANTEE_LINE, START_DATE } from './offer';
+import { REGISTER_HREF, CTA_LABEL_STICKY, GUARANTEE_LINE, START_DATE } from './offer';
 import { C } from './shared';
 
 export default function StickyCta() {
@@ -123,7 +123,7 @@ export default function StickyCta() {
               and the previous wording had to be shortened to "Full refund".
 
               See GUARANTEE_LINE in offer.ts: this is the one place on the site
-              that does not use REFUND_LINE, deliberately. */}
+              that does not use REASSURANCE_LINE, deliberately. */}
           <p
             className="flex items-center justify-center gap-x-1.5 whitespace-nowrap text-center text-[12.5px] font-medium sm:text-[13.5px]"
             style={{ color: C.inkSoft }}
@@ -143,7 +143,7 @@ export default function StickyCta() {
           </p>
 
           <Link
-            href={CHECKOUT_HREF}
+            href={REGISTER_HREF}
             data-cta
             className="lego-press cta-shimmer group inline-flex min-h-[48px] w-full shrink-0 items-center justify-center gap-2 rounded-full px-5 text-[14px] font-bold sm:w-auto sm:px-7 sm:text-[15px]"
             style={{

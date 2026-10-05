@@ -9,12 +9,10 @@
  * in a JSON body is trivially forgeable, so both are taken from the request
  * headers instead — the same way /api/meta/event has always done it.
  *
- * The catch is WHERE they are read. The Razorpay webhook is a request from
- * Razorpay, not from the buyer, so its headers carry Razorpay's IP and
- * Razorpay's agent. Reading them there would ship a confidently wrong value,
- * which is worse for matching than shipping nothing. So they are captured at
- * create-order time — the last request the buyer's own browser makes before
- * the payment sheet takes over — and carried to the webhook in the order notes.
+ * Both are read from the request that the visitor's OWN browser makes —
+ * /api/meta/event and /api/register — never from a server-to-server call,
+ * whose headers would describe that server and ship a confidently wrong value,
+ * which is worse for matching than shipping nothing.
  *
  * Header order matters. `x-forwarded-for` is a comma-separated chain in which
  * the ORIGINAL client is first and every proxy appends itself; taking the last
@@ -50,4 +48,45 @@ export function readClientIp(req: Request): string {
 
 export function readClientUserAgent(req: Request): string {
   return (req.headers.get('user-agent') ?? '').trim();
+}
+
+/**
+ * Where the caller is, according to the edge — not according to anything the
+ * browser said.
+ *
+ * Vercel and Cloudflare both stamp the resolved visitor location onto every
+ * request. On the landing-page events (ViewContent, atc_event) nobody has typed
+ * a city or picked a country yet, so these headers are the ONLY location match
+ * keys those events can carry, and country + city + region add measurably to
+ * EMQ. On registration_complete the form's own answers take precedence; these
+ * fill only what the form does not ask (region, postcode).
+ *
+ * Vercel URL-encodes the city ("Abu%20Dhabi"), so it is decoded here. Values
+ * that are absent come back as empty strings and are simply not sent.
+ */
+export type EdgeGeo = { country: string; city: string; region: string; zip: string };
+
+function header(req: Request, ...names: string[]): string {
+  for (const n of names) {
+    const v = (req.headers.get(n) ?? '').trim();
+    if (v) {
+      try {
+        return decodeURIComponent(v);
+      } catch {
+        return v;
+      }
+    }
+  }
+  return '';
+}
+
+export function readEdgeGeo(req: Request): EdgeGeo {
+  const country = header(req, 'x-vercel-ip-country', 'cf-ipcountry').toLowerCase();
+  return {
+    /* Cloudflare uses XX / T1 for unknown and Tor. Neither is a country. */
+    country: /^[a-z]{2}$/.test(country) && country !== 'xx' && country !== 't1' ? country : '',
+    city: header(req, 'x-vercel-ip-city', 'cf-ipcity'),
+    region: header(req, 'x-vercel-ip-country-region', 'cf-region-code'),
+    zip: header(req, 'x-vercel-ip-postal-code', 'cf-postal-code'),
+  };
 }

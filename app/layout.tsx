@@ -4,7 +4,7 @@ import { Fraunces, Manrope } from 'next/font/google';
 import Analytics from '@/components/Analytics';
 import MetaPixel from '@/components/MetaPixel';
 import LegoObserver from './_landing/lego';
-import { PRICE, SESSION_TIMES_PROSE, START_DATE } from './_landing/offer';
+import { SESSION_TIMES_PROSE, START_DATE } from './_landing/offer';
 import './globals.css';
 
 /**
@@ -52,7 +52,7 @@ const manrope = Manrope({
    the price cannot drift from the page they describe. SESSION_TIMES_PROSE, not
    SESSION_TIMES: an ampersand in a meta description renders as markup in some
    SERP previews. (Spec PRIORITY 1.) */
-const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating perimenopause and menopause. Sleep, Pilates, yoga and breathwork with Kaizen founder Prerna. Starts ${START_DATE}, ${SESSION_TIMES_PROSE}, live on Zoom, for ${PRICE}.`;
+const DESCRIPTION = `A live, expert-led 5-day challenge for women navigating perimenopause and menopause. Sleep, Pilates, yoga and breathwork with Kaizen founder Prerna. Starts ${START_DATE}, ${SESSION_TIMES_PROSE}, live on Zoom. Free registration.`;
 
 /* The live origin. Without a metadataBase Next resolves every share URL and
    every relative OG asset against localhost, so a link pasted into WhatsApp
@@ -126,8 +126,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LegoObserver />
         <MetaPixel />
         {/* GA4 + Clarity, from env. Renders nothing until the ids are set.
-            Without this every browser-side GA4 call is a silent no-op and the
-            webhook reports purchases with no funnel above them. */}
+            Without this every browser-side GA4 call is a silent no-op. */}
         <Analytics />
         {children}
       </body>

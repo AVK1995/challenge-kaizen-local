@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * /thank-you — where a completed payment lands.
+ * /thank-you — where a completed free registration lands.
  *
  * Copy and section order follow the ankita-postpartum thank-you page, which is
  * the house standard: confirmation → the WhatsApp join as the ONE next step →
@@ -9,8 +9,8 @@
  * project's tokens.
  *
  * The page is built around the community join, not around the receipt. That is
- * the point of the design: the Zoom links live in the group, so a buyer who
- * never joins is a refund waiting to happen. Everything else on the page is
+ * the point of the design: the Zoom links live in the group, so a registrant
+ * who never joins never shows up on Day One. Everything else on the page is
  * subordinate to that one button.
  *
  * Wording is adapted only where ankita's is factually about a different
@@ -18,7 +18,6 @@
  * the reset. The structure and the promises are unchanged.
  */
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -34,7 +33,6 @@ import {
   Notebook,
   Person,
   ShieldCheck,
-  Star,
   Warning,
   WhatsappLogo,
   X,
@@ -42,15 +40,12 @@ import {
 
 import {
   SESSION_TIMES_TZ,
+  PRODUCT_NAME,
   START_DATE,
-  TIER_BASE,
   WHATSAPP_INVITE,
-  type Tier,
 } from '../_landing/offer';
-import { VIP_UNLOCKED } from './vip-unlocked';
 import SiteFooter from '@/components/SiteFooter';
 import { C } from '../_landing/shared';
-import { trackPurchase } from '@/lib/track';
 
 /* WhatsApp's own brand colours. These deliberately do NOT come from the page
    palette: the community button is the same green on every funnel we ship, so
@@ -72,7 +67,7 @@ const COMMUNITY_BENEFITS: { icon: typeof CheckCircle; text: string }[] = [
 
 const POLICY_ITEMS = [
   'No rescheduling to future batches',
-  'No refunds for missed live sessions',
+  'Seats are limited, so join on time',
   'Recordings are not guaranteed',
 ];
 
@@ -83,39 +78,7 @@ const PREP_ITEMS = [
   'Join the community immediately',
 ];
 
-/**
- * The confirmation screen, shared by both tiers.
- *
- * /thank-you and /thank-you-vip are separate routes — a buyer should be able
- * to bookmark or be re-sent the right one — but they are the same page apart
- * from one block in the hero, so the implementation lives HERE, in a plain
- * component file, and both routes render it with their own tier. Duplicating
- * five hundred lines to change a heading is how two confirmation pages drift
- * until one of them is telling a buyer the wrong policy.
- *
- * Not in either page.tsx: Next allows a route file to export only `default`
- * and a fixed set of config names, so a second named export there fails the
- * build. Hence a sibling module rather than an import between pages.
- */
-export default function ThankYouScreen({
-  tier,
-  paymentId,
-}: {
-  tier: Tier;
-  paymentId: string;
-}) {
-  const isVip = tier.id === 'vip';
-
-  /* GA4 purchase only. Meta's Purchase and the server-side GA4 copy both come
-     from the Razorpay webhook, where the payment is proven and where buyers who
-     never return to this page are still counted.
-
-     The tier goes with it, so GA4's revenue for a VIP sale is ₹997 rather than
-     the base price and the two passes are separable in the item report. */
-  useEffect(() => {
-    if (paymentId) trackPurchase(paymentId, tier);
-  }, [paymentId, tier]);
-
+export default function ThankYouScreen() {
   /* The docked WhatsApp bar's height, measured rather than guessed, so the
      spacer below the footer matches it exactly. See the spacer near the bottom
      of this file. It reads 0 from md up, where the bar is display:none, and 0
@@ -171,81 +134,9 @@ export default function ThankYouScreen({
             style={{ color: C.inkSoft }}
           >
             You are officially enrolled in the{' '}
-            <strong style={{ color: C.ink }}>{tier.name}.</strong> Please read
+            <strong style={{ color: C.ink }}>{PRODUCT_NAME}.</strong> Please read
             this page carefully, your access depends on the next step.
           </p>
-
-          {/* ══ VIP ONLY ════════════════════════════════════════════════
-              The one thing this page does differently for an upgrade. It sits
-              ABOVE the detail cards and above the WhatsApp step, because this
-              is the only moment the buyer is actively wondering whether the
-              extra ₹500 was worth it — three screens later the question has
-              already answered itself badly.
-
-              Navy on a cream page, which is the treatment the page otherwise
-              reserves for nothing: it is the one block that has to feel like
-              a different, better thing happened here. */}
-          {isVip && (
-            <div
-              className="mx-auto mt-8 max-w-xl overflow-hidden rounded-3xl p-6 text-left sm:p-7"
-              style={{
-                background: `linear-gradient(150deg, ${C.navyDeep} 0%, #1b2c53 100%)`,
-                boxShadow: '0 26px 56px -30px rgba(31,50,92,0.55)',
-              }}
-            >
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em]"
-                style={{ background: 'rgba(238,119,120,0.22)', color: '#FBC9C4' }}
-              >
-                <Star weight="fill" className="h-3 w-3 shrink-0" />
-                VIP Access unlocked
-              </span>
-
-              <h2
-                className="mt-4 font-display text-[21px] font-semibold leading-snug sm:text-[25px]"
-                style={{ color: C.onDark }}
-              >
-                You also have{' '}
-                <span style={{ color: C.gold }}>every session recorded</span>,
-                progress tracking and two extra guides.
-              </h2>
-
-              <ul className="mt-5 flex flex-col gap-3.5">
-                {VIP_UNLOCKED.map(({ title, detail }) => (
-                  <li key={title} className="flex items-start gap-3">
-                    <span
-                      className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full"
-                      style={{ background: 'rgba(242,221,182,0.18)' }}
-                    >
-                      <Check weight="bold" className="h-3 w-3" style={{ color: C.gold }} />
-                    </span>
-                    <span className="min-w-0">
-                      <span
-                        className="block text-[14.5px] font-semibold leading-snug"
-                        style={{ color: C.onDark }}
-                      >
-                        {title}
-                      </span>
-                      <span
-                        className="mt-0.5 block text-[13px] leading-relaxed"
-                        style={{ color: C.onDarkMute }}
-                      >
-                        {detail}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <p
-                className="mt-5 border-t pt-4 text-[12.5px]"
-                style={{ borderColor: 'rgba(242,221,182,0.22)', color: C.onDarkMute }}
-              >
-                Your Symptom Score and Readiness Check are guided live on Day
-                One. Both guides are in the community with your other files.
-              </p>
-            </div>
-          )}
 
           <div className="mx-auto mt-8 grid max-w-lg gap-3 sm:grid-cols-2">
             <DetailCard icon={CalendarBlank} label="Challenge date" value={START_DATE} />
@@ -256,15 +147,6 @@ export default function ThankYouScreen({
               footnote="Choose the batch that fits"
             />
           </div>
-
-          {paymentId && (
-            <p
-              className="mt-6 text-[11.5px] font-medium uppercase tracking-[0.14em]"
-              style={{ color: C.inkSoft }}
-            >
-              Payment ID {paymentId} · {tier.price} paid
-            </p>
-          )}
         </div>
       </section>
 
@@ -453,11 +335,7 @@ export default function ThankYouScreen({
               Your spot has been reserved exclusively for you.
             </p>
             <p className="mt-1.5 text-[12.5px]" style={{ color: C.inkSoft }}>
-              (Our{' '}
-              <Link href="/refund-policy" className="underline" style={{ color: C.goldInk }}>
-                refund policy
-              </Link>{' '}
-              covers the Day One guarantee in full.)
+              Please only hold it if you plan to attend live.
             </p>
           </div>
         </div>

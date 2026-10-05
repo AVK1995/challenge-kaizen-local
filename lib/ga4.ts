@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * GA4 events, standard ecommerce names only.
+ * GA4 events, recommended names only.
  *
  * Ankita's version fires `initiate_checkout`, which is Meta's vocabulary sent
  * to Google: GA4 does not recognise it, so its built-in checkout funnel stays
@@ -55,21 +55,19 @@ function send(name: string, params: Record<string, unknown>) {
 
 const money = (m: Money) => ({
   value: m.value,
-  currency: m.currency ?? 'INR',
+  currency: m.currency ?? 'AED',
   ...(m.items && { items: m.items }),
 });
 
 export const ga4ViewItem = (m: Money) => send('view_item', money(m));
+/** CTA clicked, registration modal opened. GA4's twin of Meta's atc_event. */
 export const ga4AddToCart = (m: Money) => send('add_to_cart', money(m));
-export const ga4BeginCheckout = (m: Money) => send('begin_checkout', money(m));
-export const ga4AddPaymentInfo = (m: Money) => send('add_payment_info', money(m));
-export const ga4Purchase = (m: Money & { transactionId: string }) =>
-  send('purchase', { transaction_id: m.transactionId, ...money(m) });
+/** Registration submitted. GA4's recommended lead event. */
+export const ga4GenerateLead = (m: Money) => send('generate_lead', money(m));
 
-/* Some events should fire once per browser rather than on every click. The
-   flag is stamped BEFORE the call so a rapid double-click or a tab closed
-   mid-navigation still dedupes. If gtag is missing we do NOT stamp, so the
-   event stays pending for a properly configured session. */
+/* Some events should fire once per SESSION rather than on every render. The
+   flag is stamped BEFORE the call so a rapid double-fire still dedupes, and it
+   is per-session so a returning visitor still feeds the retargeting audience. */
 export function once(key: string, fire: () => void) {
   if (typeof window === 'undefined') return;
 
@@ -79,15 +77,9 @@ export function once(key: string, fire: () => void) {
      META event too. Meta must never go dark because GA4 is misconfigured.
      GA4's own send() queues safely on its own. */
 
-  /* A purchase must never be counted twice for the same transaction, so those
-     keys are remembered for the life of the browser. Everything else is a
-     per-SESSION guard: a durable view_item key meant a returning visitor
-     generated no ViewContent ever again, which starves retargeting audiences
-     and shrinks the optimisation signal. */
-  const durable = key.startsWith('purchase_');
   const k = `kz_ga4_${key}`;
   try {
-    const store = durable ? window.localStorage : window.sessionStorage;
+    const store = window.sessionStorage;
     if (store.getItem(k)) return;
     store.setItem(k, '1');
   } catch {

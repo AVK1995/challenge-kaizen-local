@@ -44,10 +44,9 @@ const EMPTY: Attribution = {
 };
 
 /* Capped at the point of capture, not at the point of sending. These values
-   ride to the webhook inside the Razorpay order notes, which Razorpay caps at
-   256 characters per entry, and a landing url with five utm params and an
-   fbclid on it routinely runs past 400. Trimming here keeps the cap a known
-   quantity instead of a silent truncation later. */
+   ride to Pabbly with every registration, and a landing url with five utm
+   params and an fbclid on it routinely runs past 400 characters. Trimming
+   here keeps the cap a known quantity instead of a silent truncation later. */
 const CAP = {
   utm: 100,
   fbclid: 200,

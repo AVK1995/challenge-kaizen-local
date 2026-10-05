@@ -25,7 +25,6 @@ import {
   PersonSimpleWalk,
   Plus,
   Quotes,
-  ShieldCheck,
   Steps,
   Sun,
   Waves,
@@ -38,10 +37,9 @@ import { asset } from './asset-version';
 import BrandMark from './brand-mark';
 import { legoBrick, legoDelay } from './lego-style';
 import {
-  CHECKOUT_HREF,
+  REGISTER_HREF,
   CTA_LABEL,
-  PRICE,
-  REFUND_LINE,
+  REASSURANCE_LINE,
   SESSION_TIMES,
   START_DATE,
 } from './offer';
@@ -460,7 +458,7 @@ function TwoOptions() {
           <PriceAnchor size="md" onDark className="mt-7" />
 
           <Link
-            href={CHECKOUT_HREF}
+            href={REGISTER_HREF}
             data-cta
             className="lego-press cta-shimmer group mt-6 inline-flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-full px-6 font-body text-[15px] font-bold"
             style={{
@@ -489,57 +487,6 @@ function TwoOptions() {
   );
 }
 
-/* ══ 12b · Our promise to you ══════════════════════════════════════════════
- *
- * The refund promise had been running as a one-line footnote welded under each
- * button, in three different wordings, and nowhere on the page did it get
- * enough room to actually be read as a promise. A line of 13px grey under a
- * CTA is legal cover; a section is a commitment.
- *
- * It sits between the decision (Two Options) and the price (Recap) on purpose:
- * the reader has just been asked to choose and is about to be shown a number,
- * and this is the beat where the cost of being wrong gets removed.
- *
- * Deliberately quiet. No gold ground, no seal, no shadow — the recap is two
- * screens below and it is the page's designed peak. A second ornate object
- * here would take the weight off it. (Spec BLOCKER 4.)
- */
-function PromiseSection() {
-  return (
-    <section className="px-4 pb-12 pt-2 sm:pb-20 sm:pt-4" style={{ background: C.canvas }}>
-      <div
-        data-lego=""
-        className="mx-auto max-w-[760px] rounded-3xl px-7 py-10 text-center sm:px-12"
-        style={{ background: C.canvasAlt, border: `1px solid ${C.line}` }}
-      >
-        <span
-          className="lego-stud inline-grid h-12 w-12 place-items-center rounded-full"
-          style={{ background: C.canvas, border: `1px solid ${C.lineStrong}` }}
-        >
-          <ShieldCheck weight="duotone" className="h-6 w-6" style={{ color: C.goldInk }} />
-        </span>
-
-        <h2
-          className="mt-5 font-display text-[clamp(26px,3.6vw,38px)] font-semibold leading-[1.16]"
-          style={{ color: C.ink, textWrap: 'balance' } as React.CSSProperties}
-        >
-          Our promise <span style={{ color: C.goldDeep }}>to you</span>
-        </h2>
-
-        <p
-          className="mx-auto mt-5 max-w-[560px] text-[16px] leading-[1.75] sm:text-[17px]"
-          style={{ color: C.inkSoft }}
-        >
-          Come to Day One. If it is not for you, tell us that night and we
-          return your{' '}
-          <strong style={{ color: C.ink, fontWeight: 700 }}>{PRICE} in full</strong>, no
-          questions asked. You keep the guides either way.
-        </p>
-      </div>
-    </section>
-  );
-}
-
 /* ══ 13 · Recap ════════════════════════════════════════════════════════════
  *
  * The premium peak. The last thing the reader touches before paying, so it is
@@ -552,8 +499,8 @@ function PromiseSection() {
  * the peak is earned with craft and depth rather than by turning the lights
  * off.
  */
-/* Mirrors the toolkit cards above, in the same order, and app/checkout/included.ts
-   mirrors both. Three lists, one stack: if an item moves, it moves in all three
+/* Mirrors the toolkit cards above, in the same order. Two lists, one stack:
+   if an item moves, it moves in both
    or the recap promises something the cards did not. (Spec PRIORITY 4.) */
 const RECAP: { what: string; value: number }[] = [
   { what: '5-Day Live (Peri)Menopause Reset Challenge', value: 2500 },
@@ -672,7 +619,7 @@ function Recap() {
               above it. The ₹6,788 strike answers "what is it worth"; this one
               answers "what does it normally cost", and they are different
               questions. (Spec BLOCKER 2 names the recap CTA explicitly.) */}
-          <PriceAnchor size="lg" stacked note="One-time payment" className="mt-3" />
+          <PriceAnchor size="lg" stacked note="Free registration · Limited seats" className="mt-3" />
         </div>
 
         <div className="mx-auto mt-9 flex max-w-[520px] flex-col items-center">
@@ -702,10 +649,8 @@ function Colophon() {
         <span aria-hidden className="hidden sm:inline">
           {' · '}
         </span>
-        {/* Was "100% money-back guarantee", the third of three wordings the
-            page carried for one promise. (BLOCKER 4.) */}
         <span className="block sm:inline">
-          {PRICE} · {REFUND_LINE}
+          {REASSURANCE_LINE}
         </span>
       </p>
     </SiteFooter>
@@ -719,8 +664,6 @@ export default function Close() {
       <Mechanism />
       <Results />
       <TwoOptions />
-      {/* Between the decision and the price, per BLOCKER 4. */}
-      <PromiseSection />
       <Recap />
       <Colophon />
     </>
