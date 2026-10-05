@@ -50,6 +50,17 @@ export async function POST(req: Request) {
 
   const payment = parsed.payload?.payment?.entity ?? {};
   const notes = payment.notes ?? {};
+
+  /* Razorpay sends every captured payment on the account to this URL. 200, not
+     an error, for a foreign one: a non-200 makes Razorpay retry it for hours. */
+  const kind = String(notes.kind ?? '');
+  if (!kind.startsWith('kaizen_5day_reset')) {
+    console.warn(
+      `[rzp-webhook] ignored payment ${String(payment.id ?? '')}: kind="${kind || 'none'}"`,
+    );
+    return NextResponse.json({ ok: true, ignored: 'not-this-funnel' });
+  }
+
   const paymentId = String(payment.id ?? '');
   const orderId = String(payment.order_id ?? '');
   const amountRupees = Number(payment.amount ?? 0) / 100;
