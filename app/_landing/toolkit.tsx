@@ -36,6 +36,7 @@ import {
 
 import { legoBrick, legoDelay } from './lego-style';
 import { asset } from './asset-version';
+import { formatAed, toAed } from './offer';
 import { Art, C, MediaPlaceholder, SectionEyebrow } from './shared';
 
 /* ⚠️ THIS COVER MUST AGREE WITH below-fold.tsx DAYS. It is the one asset on the
@@ -162,12 +163,12 @@ const BONUSES = [
 const TAG = 'INSTANT ACCESS · INCLUDED';
 
 /* Values are NUMBERS on the items and formatted here, so the per-item labels
-   and the total below can never disagree. They were strings — "(₹997 Value)" —
-   which meant the only way to show a total was to type one. */
-const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
-const valueLabel = (n: number) => `(${inr(n)} Value)`;
-const TOTAL_VALUE = inr(
-  [LEAD, ...BONUSES].reduce((sum, item) => sum + item.rupees, 0),
+   and the total below can never disagree. Declared in rupees, shown in AED —
+   see INR_PER_AED in offer.ts. The total sums the ROUNDED dirham figures, so
+   the cards always add up to it. */
+const valueLabel = (rupees: number) => `(${formatAed(toAed(rupees))} Value)`;
+const TOTAL_VALUE = formatAed(
+  [LEAD, ...BONUSES].reduce((sum, item) => sum + toAed(item.rupees), 0),
 );
 
 /* A bed, not a bare glyph: at this size an unbedded icon reads as debris next

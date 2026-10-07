@@ -43,6 +43,27 @@ const num = (raw: string | undefined, fallback: number): number => {
  */
 export const PRICE = 'FREE';
 
+/**
+ * ══ VALUES ARE SHOWN IN AED ═══════════════════════════════════════════════
+ *
+ * The "what's included" values were set in rupees and are still DECLARED in
+ * rupees (toolkit.tsx, close.tsx), because that is how the client prices them.
+ * They are CONVERTED here, once, for display to the Dubai audience.
+ *
+ * INR_PER_AED is the market rate on 7 Oct 2026 (1 AED ≈ ₹26.22). Update it
+ * here if the rate drifts; every value and total on the page follows.
+ *
+ * Rounded to whole dirhams per item, and totals are summed from the ROUNDED
+ * figures, so a row of values always adds up to the total printed beneath it.
+ */
+export const INR_PER_AED = 26.22;
+
+/** A rupee value, in whole dirhams. */
+export const toAed = (rupees: number) => Math.round(rupees / INR_PER_AED);
+
+/** "AED 95", "AED 1,250". */
+export const formatAed = (aed: number) => `AED ${aed.toLocaleString('en-US')}`;
+
 /** The product, as named on the thank-you page and in the Pabbly record. */
 export const PRODUCT_NAME = 'Kaizen 5-Day (Peri)menopause Reset';
 

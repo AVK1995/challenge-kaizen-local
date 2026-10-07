@@ -40,6 +40,8 @@ import {
   REGISTER_HREF,
   CTA_LABEL,
   REASSURANCE_LINE,
+  formatAed,
+  toAed,
   SESSION_TIMES,
   START_DATE,
 } from './offer';
@@ -516,9 +518,11 @@ const RECAP: { what: string; value: number }[] = [
    silently became wrong the moment the revised copy dropped an item and
    revalued another: the ledger showed five rows adding to ₹4,988 with a total
    of ₹5,485 struck out beside them, on the one beat of the page a reader
-   actually does the arithmetic on. Deriving it makes that impossible. */
-const RECAP_TOTAL = RECAP.reduce((n, r) => n + r.value, 0);
-const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+   actually does the arithmetic on. Deriving it makes that impossible.
+   Values are declared in rupees and shown in AED (see INR_PER_AED in
+   offer.ts); the total sums the ROUNDED dirham figures so the rows add up. */
+const RECAP_TOTAL = RECAP.reduce((n, r) => n + toAed(r.value), 0);
+const aed = (rupees: number) => formatAed(toAed(rupees));
 
 function Recap() {
   return (
@@ -579,7 +583,7 @@ function Recap() {
                 className="shrink-0 font-display text-[16px] font-semibold"
                 style={{ color: C.inkSoft }}
               >
-                {inr(r.value)}
+                {aed(r.value)}
               </span>
             </li>
           ))}
@@ -601,7 +605,7 @@ function Recap() {
             className="kz-strike font-display text-[22px] font-semibold"
             style={{ color: C.inkSoft }}
           >
-            {inr(RECAP_TOTAL)}
+            {formatAed(RECAP_TOTAL)}
           </span>
         </div>
 
